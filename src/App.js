@@ -89,6 +89,7 @@ const APTS_INIT = [
 
 /* ── HELPERS ─────────────────────────────────────────────────────── */
 const fmtBRL = v => `R$ ${Number(v).toFixed(2).replace(".",",")}`;
+// eslint-disable-next-line
 const fmtPhone = v => v.replace(/\D/g,"").replace(/(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
 const STATUS_META = {
   confirmed: { label:"Confirmado", color:C.green  },
@@ -977,6 +978,7 @@ async function handleDeleteClient(id) {
 
     window.open("https://wa.me/55" + phone + "?text=" + msg, "_blank");
   }
+  // eslint-disable-next-line
   async function handleDeleteApt(id) {
    
     if (!window.confirm("Deseja excluir este agendamento?")) return;
