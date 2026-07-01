@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:8000";
+const API = "http://https://web-production-ea413c.up.railway.app:8000";
 
 const C = {
   bg:      "#08090F",
