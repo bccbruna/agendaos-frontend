@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "https://web-production-ea413c.up.railway.app";
+const API = "https://agendaos-backend-production.up.railway.app";
 
 const C = {
   bg:      "#08090F",
