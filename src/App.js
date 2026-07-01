@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Agendar from "./Agendar";
-const API = "http://https://web-production-ea413c.up.railway.app:8000";
+const API = "https://web-production-ea413c.up.railway.app";
 
 /* ── TOKENS ──────────────────────────────────────────────────────── */
 const C = {
