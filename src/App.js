@@ -342,7 +342,7 @@ function TrocarSenhaForm({ email, onSucesso }) {
       const res = await fetch(`${API}/trocar-senha`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha_atual:"trocar123", senha_nova:senhaNova }),
+        body: JSON.stringify({ email, senha_atual:"123456", senha_nova:senhaNova }),
       });
       const data = await res.json();
       if (data.ok) { onSucesso(); }
