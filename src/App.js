@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Agendar from "./Agendar";
 const API = "https://agendaos-backend-production.up.railway.app";
@@ -812,6 +812,8 @@ const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "t
 const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
 const [usuarioEmail, setUsuarioEmail] = useState(() => localStorage.getItem("email") || "");
 const [menuOpen, setMenuOpen] = useState(false);  
+const [novoAgendamento, setNovoAgendamento] = useState(null);
+const ultimoIdRef = useRef(0);
 const [tab,      setTab]      = useState("dashboard");
   const [apts,     setApts]     = useState(APTS_INIT);
   useEffect(() => {
@@ -905,7 +907,31 @@ const [cancelMsg,    setCancelMsg]    = useState("");
 const [serviceModal, setServiceModal] = useState(false);
 
   const pending = apts.filter(a=>a.status==="pending").length;
+// Polling para novos agendamentos
+useEffect(() => {
+  if (!logado) return;
+  
+  const check = async () => {
+    try {
+      const res = await fetch(`${API}/agendamentos`);
+      const data = await res.json();
+      const pendentes = data.filter(a => a.status === "pending");
+      if (pendentes.length > 0) {
+        const maxId = Math.max(...pendentes.map(a => a.id));
+        if (ultimoIdRef.current === 0) {
+          ultimoIdRef.current = maxId;
+        } else if (maxId > ultimoIdRef.current) {
+          const novo = pendentes.find(a => a.id === maxId);
+          setNovoAgendamento(novo);
+          ultimoIdRef.current = maxId;
+        }
+      }
+    } catch(e) {}
+  };
 
+  const interval = setInterval(check, 30000);
+  return () => clearInterval(interval);
+}, [logado]);
   function openNewApt(date, hour) {
     setEditApt(null);
     setAptDate(date);
@@ -1314,7 +1340,55 @@ localStorage.removeItem("email");}} style={{
           {content[tab]}
         </main>
       </div>
-
+{/* Popup novo agendamento */}
+{novoAgendamento && (
+  <div style={{
+    position:"fixed", bottom:24, right:24, zIndex:200,
+    background:C.surface, border:`1px solid ${C.accent}55`,
+    borderRadius:16, padding:20, maxWidth:320, width:"100%",
+    boxShadow:`0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${C.accent}22`,
+    animation:"slideIn 0.3s ease",
+  }}>
+    <style>{`
+      @keyframes slideIn {
+        from { transform: translateX(100px); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
+      }
+    `}</style>
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <div style={{
+          width:36, height:36, borderRadius:10,
+          background:`${C.accent}18`, display:"flex",
+          alignItems:"center", justifyContent:"center", fontSize:18,
+        }}>🔔</div>
+        <div>
+          <div style={{ fontWeight:800, fontSize:14, color:C.accent }}>Novo agendamento!</div>
+          <div style={{ fontSize:11, color:C.dim }}>Acabou de chegar</div>
+        </div>
+      </div>
+      <button onClick={()=>setNovoAgendamento(null)} style={{
+        background:"none", border:"none", color:C.muted,
+        fontSize:18, cursor:"pointer", lineHeight:1,
+      }}>×</button>
+    </div>
+    <div style={{ fontSize:13, color:C.muted, marginBottom:12 }}>
+      <div>📋 Serviço: <strong style={{color:C.text}}>{novoAgendamento.servico}</strong></div>
+      <div>📅 Data: <strong style={{color:C.text}}>{novoAgendamento.data?.split("-").reverse().join("/")}</strong></div>
+      <div>🕐 Horário: <strong style={{color:C.text}}>{novoAgendamento.hora}h</strong></div>
+    </div>
+    <div style={{ display:"flex", gap:8 }}>
+      <Btn variant="ghost" size="sm" style={{flex:1, justifyContent:"center"}}
+        onClick={()=>setNovoAgendamento(null)}>
+        Ignorar
+      </Btn>
+      <Btn variant="primary" size="sm" style={{flex:1, justifyContent:"center"}}
+        onClick={()=>{ setTab("calendar"); setNovoAgendamento(null); }}>
+        Ver agenda
+      </Btn>
+    </div>
+  </div>
+)}
       {/* Modal agendamento */}
       <Modal open={aptModal} onClose={()=>{setAptModal(false);setEditApt(null)}}
         title={editApt?"Editar agendamento":"Novo agendamento"}>
