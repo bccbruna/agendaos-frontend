@@ -48,15 +48,34 @@ export default function Agendar() {
   const [hora,      setHora]      = useState(9);
   const [loading,   setLoading]   = useState(false);
   const [erro,      setErro]      = useState("");
+  const [horariosOcupados, setHorariosOcupados] = useState([]);
 
   const HOURS = Array.from({length:11},(_,i)=>i+8);
 
   useEffect(() => {
-    fetch(`${API}/servicos-publicos`)
-      .then(r=>r.json())
-      .then(setServices)
-      .catch(()=>{});
-  }, []);
+  fetch(`${API}/servicos`)
+    .then(r=>r.json())
+    .then(data => setServices(data.map(s => ({
+      id: s.id,
+      name: s.nome,
+      duration: s.duracao,
+      price: s.preco,
+    }))))
+    .catch(()=>{});
+}, []);
+
+useEffect(() => {
+  if (!data) return;
+  fetch(`${API}/agendamentos`)
+    .then(r=>r.json())
+    .then(agendamentos => {
+      const ocupados = agendamentos
+        .filter(a => a.data === data && a.status !== "cancelado" && a.status !== "cancelled")
+        .map(a => a.hora);
+      setHorariosOcupados(ocupados);
+    })
+    .catch(()=>{});
+}, [data]);
 
   async function handleAgendar() {
     setErro(""); setLoading(true);
@@ -201,15 +220,23 @@ export default function Agendar() {
               <div>
                 <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>HORÁRIO</div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
-                  {HOURS.map(h=>(
-                    <button key={h} onClick={()=>setHora(h)} style={{
-                      padding:"10px", borderRadius:10, cursor:"pointer",
-                      background: hora===h ? `${C.accent}22` : "rgba(255,255,255,0.04)",
-                      border:`1px solid ${hora===h ? C.accent+"55" : C.border}`,
-                      color: hora===h ? C.accent : C.muted,
-                      fontFamily:"inherit", fontWeight:700, fontSize:13,
-                    }}>{String(h).padStart(2,"0")}h</button>
-                  ))}
+                  {HOURS.map(h=>{
+  const ocupado = horariosOcupados.includes(h);
+  return (
+    <button key={h} onClick={()=>!ocupado && setHora(h)} style={{
+      padding:"10px", borderRadius:10, cursor: ocupado ? "not-allowed" : "pointer",
+      background: ocupado ? "rgba(255,255,255,0.02)" : hora===h ? `${C.accent}22` : "rgba(255,255,255,0.04)",
+      border:`1px solid ${ocupado ? C.border : hora===h ? C.accent+"55" : C.border}`,
+      color: ocupado ? C.dim : hora===h ? C.accent : C.muted,
+      fontFamily:"inherit", fontWeight:700, fontSize:13,
+      opacity: ocupado ? 0.4 : 1,
+      textDecoration: ocupado ? "line-through" : "none",
+    }}>
+      {String(h).padStart(2,"0")}h
+      {ocupado && <div style={{ fontSize:8, color:C.dim }}>ocupado</div>}
+    </button>
+  );
+})}
                 </div>
               </div>
 
