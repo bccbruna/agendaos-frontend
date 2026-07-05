@@ -903,6 +903,7 @@ useEffect(() => {
   if (!logado) return;
   
   const check = async () => {
+    console.log("Verificando agendamentos...");
     try {
       const res = await fetch(`${API}/agendamentos`);
       const data = await res.json();
