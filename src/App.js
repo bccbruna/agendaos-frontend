@@ -1034,7 +1034,7 @@ async function handleCancelApt() {
     const service = services.find(s => s.id === cancelApt.serviceId);
     
     try {
-      await fetch(`${API}/agendamentos/${cancelApt.id}/status?status=cancelado`, {
+      await fetch(`${API}/agendamentos/${cancelApt.id}/status?status=cancelled`, {
         method: "PUT",
       });
     } catch(e) {}
