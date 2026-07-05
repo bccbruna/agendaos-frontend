@@ -89,9 +89,9 @@ function Badge({ status }) {
   );
 }
 
-function Card({ children, style, glow }) {
+function Card({ children, style, glow, onClick }) {
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       background:C.card, border:`1px solid ${glow?glow+"33":C.border}`,
       borderRadius:14, padding:20,
       boxShadow:glow?`0 0 20px ${glow}0E`:"none", ...style,
