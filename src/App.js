@@ -920,7 +920,7 @@ useEffect(() => {
     } catch(e) {}
   };
 
-  const interval = setInterval(check, 30000);
+  cconst interval = setInterval(check, 10000);
   return () => clearInterval(interval);
 }, [logado]);
   function openNewApt(date, hour) {
