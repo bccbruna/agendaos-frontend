@@ -540,121 +540,161 @@ function Dashboard({ apts, clients, services }) {
 /* ── CALENDAR (WEEK VIEW) ────────────────────────────────────────── */
 function Calendar({ apts, clients, services, onEdit, onNew }) {
   const isMobile = useIsMobile();
-  const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  
+  const year  = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
+  const startPad = firstDay.getDay();
+  
+  const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                      "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  
+  const today = new Date().toISOString().split("T")[0];
 
-  const dayApts = (dayIdx) =>
-    apts.filter(a=>a.date===fmtISO(WEEK[dayIdx])).sort((a,b)=>a.hour-b.hour);
+  function prevMonth() { setCurrentDate(new Date(year, month - 1, 1)); }
+  function nextMonth() { setCurrentDate(new Date(year, month + 1, 1)); }
 
-  const today = new Date().getDay();
+  const days = [];
+  for (let i = 0; i < startPad; i++) days.push(null);
+  for (let i = 1; i <= lastDay.getDate(); i++) days.push(i);
+
+  function fmtDay(day) {
+    return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  }
+
+  const selectedDate = selectedDay ? fmtDay(selectedDay) : null;
+  const selectedApts = selectedDate ? apts.filter(a => a.date === selectedDate).sort((a,b) => a.hour - b.hour) : [];
 
   return (
-    <div>
-      {/* Day tabs */}
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:20 }}>
-        {WEEK.map((d,i)=>{
-          const count = dayApts(i).length;
-          const isToday = i===today;
-          const isSel   = i===selectedDay;
-          return (
-            <button key={i} onClick={()=>setSelectedDay(i)} style={{
-              padding:"10px 6px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
-              background:isSel?`${C.accent}18`:isToday?"rgba(255,255,255,0.05)":"transparent",
-              border:`1px solid ${isSel?C.accent+"55":isToday?C.border:C.border}`,
-              color:isSel?C.accent:isToday?C.text:C.muted,
-              transition:"all 0.15s",
-            }}>
-              <div style={{ fontSize:10,letterSpacing:"0.1em",marginBottom:4 }}>{DAYS_SHORT[i]}</div>
-              <div style={{ fontSize:16,fontWeight:900 }}>{d.getDate()}</div>
-              {count>0 && (
-                <div style={{
-                  marginTop:4,minWidth:18,height:18,borderRadius:20,
-                  background:isSel?C.accent:"rgba(168,85,247,0.3)",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:10,fontWeight:900,color:"#fff",margin:"4px auto 0",
-                  padding:"0 5px",
-                }}>{count}</div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Day header */}
-      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
-        <div>
-          <div style={{ fontWeight:900,fontSize:18 }}>{DAYS_FULL[selectedDay]}, {fmt(WEEK[selectedDay])}</div>
-          <div style={{ fontSize:12,color:C.dim }}>{dayApts(selectedDay).length} agendamento{dayApts(selectedDay).length!==1?"s":""}</div>
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      
+      {/* Navegação mês */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <Btn variant="ghost" onClick={prevMonth}>← Anterior</Btn>
+        <div style={{ fontWeight:900, fontSize: isMobile ? 16 : 20 }}>
+          {monthNames[month]} {year}
         </div>
-        <Btn variant="primary" onClick={()=>onNew(fmtISO(WEEK[selectedDay]))}>+ Novo agendamento</Btn>
+        <Btn variant="ghost" onClick={nextMonth}>Próximo →</Btn>
       </div>
 
-      {/* Hour grid */}
-      <Card style={{ padding:0,overflow:"hidden" }}>
-        {HOURS.map(h=>{
-          const slotApts = dayApts(selectedDay).filter(a=>a.hour===h);
-          const isNow = selectedDay===today && new Date().getHours()===h;
-          return (
-            <div key={h} style={{
-              display:"flex",borderBottom:`1px solid ${C.border}`,
-              background:isNow?`${C.accent}06`:"transparent",
-              minHeight:64,
-            }}>
-              {/* Hour label */}
-              <div style={{
-                width:64,flexShrink:0,padding:"8px 12px",
-                fontSize:12,fontWeight:700,color:isNow?C.accent:C.dim,
-                borderRight:`1px solid ${C.border}`,
-                display:"flex",alignItems:"flex-start",paddingTop:10,
-              }}>
-                {String(h).padStart(2,"0")}:00
-                {isNow && <div style={{ width:6,height:6,borderRadius:"50%",background:C.accent,marginLeft:6,marginTop:3,animation:"pulse 1.5s infinite" }}/>}
-              </div>
+      {/* Cabeçalho dias da semana */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4, textAlign:"center" }}>
+        {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d => (
+          <div key={d} style={{ fontSize:10, color:C.muted, fontWeight:700, padding:"8px 0", letterSpacing:"0.1em" }}>{d}</div>
+        ))}
+      </div>
 
-              {/* Slot */}
-              <div style={{ flex:1,padding:"6px 10px",display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-start" }}>
-                {slotApts.map(a=>{
-                  const client  = clients.find(c=>c.id===a.clientId);
-                  const service = services.find(s=>s.id===a.serviceId);
-                  const sc      = STATUS_META[a.status];
-                  return (
-                    <div key={a.id} onClick={()=>onEdit(a)} style={{
-                      padding:"8px 14px",borderRadius:10,cursor:"pointer",
-                      background:`${service?.color||C.accent}14`,
-                      border:`1px solid ${service?.color||C.accent}33`,
-                      borderLeft:`3px solid ${service?.color||C.accent}`,
-                      minWidth:180,flex:1,transition:"all 0.15s",
-                    }}
-                    onMouseEnter={e=>e.currentTarget.style.transform="scale(1.01)"}
-                    onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-                    >
-                      <div style={{ fontWeight:800,fontSize:13,marginBottom:2 }}>{client?.name}</div>
-                      <div style={{ fontSize:11,color:C.dim }}>{service?.name} · {service?.duration}min</div>
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6 }}>
-                        <span style={{ fontSize:11,fontWeight:700,color:C.green }}>{fmtBRL(service?.price||0)}</span>
-                        <span style={{ fontSize:9,fontWeight:700,color:sc.color,background:`${sc.color}18`,padding:"2px 6px",borderRadius:10 }}>
-                          {sc.label}
-                        </span>
-                      </div>
-                      {a.obs && <div style={{ fontSize:10,color:C.dim,marginTop:4,fontStyle:"italic" }}>📝 {a.obs}</div>}
-                    </div>
-                  );
-                })}
-                {slotApts.length===0 && (
-                  <div onClick={()=>onNew(fmtISO(WEEK[selectedDay]),h)} style={{
-                    flex:1,height:48,borderRadius:8,cursor:"pointer",
-                    border:`1px dashed ${C.border}`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:11,color:C.dim,transition:"all 0.15s",
-                  }}
-                  onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.accent+"55"; e.currentTarget.style.color=C.accent; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.dim; }}
-                  >+ agendar</div>
-                )}
-              </div>
+      {/* Grid do mês */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap: isMobile ? 2 : 4 }}>
+        {days.map((day, i) => {
+          if (!day) return <div key={`pad-${i}`} />;
+          const dateStr  = fmtDay(day);
+          const dayApts  = apts.filter(a => a.date === dateStr);
+          const isToday  = dateStr === today;
+          const isSel    = day === selectedDay;
+          const isPast   = dateStr < today;
+
+          return (
+            <div key={day} onClick={() => setSelectedDay(day)} style={{
+              minHeight: isMobile ? 50 : 80,
+              borderRadius:10, padding: isMobile ? "4px" : "8px 6px",
+              background: isSel ? `${C.accent}18` : isToday ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${isSel ? C.accent+"55" : isToday ? C.accent+"33" : C.border}`,
+              cursor:"pointer", transition:"all 0.15s",
+              opacity: isPast ? 0.5 : 1,
+            }}>
+              <div style={{
+                fontSize: isMobile ? 11 : 13,
+                fontWeight: isToday||isSel ? 900 : 600,
+                color: isSel ? C.accent : isToday ? C.accent : C.text,
+                marginBottom:2,
+              }}>{day}</div>
+              
+              {!isMobile && dayApts.slice(0,2).map(a => {
+                const service = services.find(s => s.id === a.serviceId);
+                const client  = clients.find(c => c.id === a.clientId);
+                return (
+                  <div key={a.id} style={{
+                    fontSize:9, fontWeight:700, padding:"2px 5px", borderRadius:4, marginBottom:2,
+                    background: `${service?.color || C.accent}22`,
+                    color: service?.color || C.accent,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                  }}>
+                    {String(a.hour).padStart(2,"0")}h {client?.name?.split(" ")[0] || "—"}
+                  </div>
+                );
+              })}
+              {dayApts.length > 0 && isMobile && (
+                <div style={{
+                  width:6, height:6, borderRadius:"50%",
+                  background: C.accent, margin:"2px auto 0",
+                }}/>
+              )}
+              {dayApts.length > 2 && !isMobile && (
+                <div style={{ fontSize:9, color:C.dim }}>+{dayApts.length - 2} mais</div>
+              )}
             </div>
           );
         })}
-      </Card>
+      </div>
+
+      {/* Painel do dia selecionado */}
+      {selectedDay && (
+        <Card>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <div style={{ fontWeight:900, fontSize:16 }}>
+              {selectedDay}/{String(month+1).padStart(2,"0")}/{year}
+              <span style={{ fontSize:12, color:C.dim, marginLeft:8, fontWeight:400 }}>
+                {selectedApts.length} agendamento{selectedApts.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <Btn variant="primary" size="sm" onClick={() => onNew(fmtDay(selectedDay))}>
+              + Novo
+            </Btn>
+          </div>
+
+          {selectedApts.length === 0 ? (
+            <div style={{ fontSize:13, color:C.dim, textAlign:"center", padding:"24px 0" }}>
+              Nenhum agendamento neste dia.
+            </div>
+          ) : (
+            selectedApts.map(a => {
+              const client  = clients.find(c => c.id === a.clientId);
+              const service = services.find(s => s.id === a.serviceId);
+              return (
+                <div key={a.id} onClick={() => onEdit(a)} style={{
+                  display:"flex", alignItems:"center", gap:12,
+                  padding:"12px 14px", borderRadius:10, marginBottom:8, cursor:"pointer",
+                  background: `${service?.color || C.accent}0D`,
+                  border: `1px solid ${service?.color || C.accent}22`,
+                  transition:"all 0.15s",
+                }}>
+                  <div style={{
+                    width:44, height:44, borderRadius:10, flexShrink:0,
+                    background: `${service?.color || C.accent}18`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontWeight:900, fontSize:14, color: service?.color || C.accent,
+                  }}>
+                    {String(a.hour).padStart(2,"0")}h
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{client?.name || "—"}</div>
+                    <div style={{ fontSize:12, color:C.dim }}>{service?.name} · {service?.duration}min</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontWeight:800, color:C.green, fontSize:13 }}>{fmtBRL(service?.price || 0)}</div>
+                    <Badge status={a.status} />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </Card>
+      )}
     </div>
   );
 }
