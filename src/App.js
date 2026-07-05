@@ -1029,14 +1029,19 @@ async function handleDeleteClient(id) {
     }
   }
    function handleCancelApt() {
+    async function handleCancelApt() {
     if (!cancelApt) return;
     const client  = clients.find(c => c.id === cancelApt.clientId);
     const service = services.find(s => s.id === cancelApt.serviceId);
     
-    // Atualiza status para cancelado
+    try {
+      await fetch(`${API}/agendamentos/${cancelApt.id}/status?status=cancelado`, {
+        method: "PUT",
+      });
+    } catch(e) {}
+
     setApts(as => as.map(a => a.id === cancelApt.id ? {...a, status:"cancelled"} : a));
     
-    // Abre WhatsApp com mensagem
     const phone = client?.phone?.replace(/\D/g, "");
     const msg = encodeURIComponent(
       `Olá ${client?.name}! 👋\n\n` +
