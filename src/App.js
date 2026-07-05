@@ -423,6 +423,7 @@ function ClientForm({ initial, onSave, onCancel }) {
 
 /* ── DASHBOARD ───────────────────────────────────────────────────── */
 function Dashboard({ apts, clients, services }) {
+  const isMobile = useIsMobile();
   const today     = new Date().toISOString().split("T")[0];
   const todayApts = apts.filter(a=>a.date===today);
   const weekRev   = apts.filter(a=>a.status!=="cancelled")
@@ -1233,7 +1234,7 @@ onDelete={handleDeleteClient} />,
               + Novo agendamento
             </Btn>
           </div>
-        </aside>
+       
 
         {/* MAIN */}
         <main style={{ 
