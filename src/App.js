@@ -245,6 +245,11 @@ function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWha
     ✅ Confirmar com WhatsApp
   </Btn>
 )}
+{initial?.id && onDelete && (
+  <Btn variant="danger" size="sm" onClick={()=>onDelete(initial.id)}>
+    🗑️ Excluir
+  </Btn>
+)}
 <Btn variant="ghost" onClick={onCancel}>Fechar</Btn>
         <Btn variant="ghost" onClick={onCancel}>Fechar</Btn>
         <Btn variant="primary" onClick={()=>onSave(form)} disabled={!form.clientId||!form.serviceId}>
