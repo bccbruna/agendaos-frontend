@@ -940,6 +940,17 @@ useEffect(() => {
   }
 
  async function handleSaveApt(form) {
+  // Verifica horário ocupado
+const conflito = apts.find(a => 
+  a.date === form.date && 
+  a.hour === parseInt(form.hour) && 
+  a.status !== "cancelled" &&
+  (!editApt || a.id !== editApt.id)
+);
+if (conflito) {
+  alert(`⚠️ Horário ${form.hour}h já está ocupado neste dia!`);
+  return;
+}
     try {
       if (editApt) {
         setApts(as=>as.map(a=>a.id===editApt.id?{...a,...form,clientId:parseInt(form.clientId),serviceId:parseInt(form.serviceId),hour:parseInt(form.hour)}:a));
@@ -1383,7 +1394,18 @@ localStorage.removeItem("email");}} style={{
         Ignorar
       </Btn>
       <Btn variant="primary" size="sm" style={{flex:1, justifyContent:"center"}}
-        onClick={()=>{ setTab("calendar"); setNovoAgendamento(null); }}>
+        onClick={async ()=>{ 
+  const res = await fetch(`${API}/agendamentos`);
+  const data = await res.json();
+  setApts(data.map(a => ({
+    id: a.id, clientId: a.cliente_id,
+    serviceId: a.serviceId || 1,
+    date: a.data, hour: a.hora,
+    status: a.status, obs: a.obs || "",
+  })));
+  setTab("calendar"); 
+  setNovoAgendamento(null); 
+}}>
         Ver agenda
       </Btn>
     </div>
