@@ -1369,7 +1369,7 @@ localStorage.removeItem("email");}} style={{
       </div>
       <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
         <Btn variant="ghost" onClick={()=>setServiceModal(false)}>Cancelar</Btn>
-        <Btn variant="primary" onClick={()=>{
+        <Btn variant="primary" onClick={async ()=>{
           try {
   if (editService.id && services.find(s => s.id === editService.id)) {
     await fetch(`${API}/servicos/${editService.id}`, {
