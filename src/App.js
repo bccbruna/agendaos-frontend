@@ -99,9 +99,9 @@ function Card({ children, style, glow }) {
   );
 }
 
-function Stat({ icon, label, value, sub, color=C.accent }) {
+function Stat({ icon, label, value, sub, color=C.accent, onClick }) {
   return (
-    <Card style={{ position:"relative", overflow:"hidden" }}>
+    <Card style={{ position:"relative", overflow:"hidden", cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
       <div style={{ position:"absolute",top:0,right:0,width:70,height:70,
         background:`radial-gradient(circle at top right,${color}18,transparent 70%)` }}/>
       <div style={{ fontSize:22, marginBottom:10 }}>{icon}</div>
@@ -400,7 +400,7 @@ function ClientForm({ initial, onSave, onCancel }) {
 ═══════════════════════════════════════════════════════════════════ */
 
 /* ── DASHBOARD ───────────────────────────────────────────────────── */
-function Dashboard({ apts, clients, services }) {
+function Dashboard({ apts, clients, services, onNavigate }) {
   const isMobile = useIsMobile();
   const today     = new Date().toISOString().split("T")[0];
   const todayApts = apts.filter(a=>a.date===today);
@@ -415,10 +415,10 @@ function Dashboard({ apts, clients, services }) {
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
       <div style={{ display:"grid",gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",gap:14 }}>
-        <Stat icon="📅" label="Hoje"            value={todayApts.length}    color={C.accent} sub="agendamentos" />
-        <Stat icon="⏳" label="Pendentes"        value={pending}             color={C.yellow} sub="aguardando confirmação" />
-        <Stat icon="👥" label="Clientes"         value={clients.length}      color={C.blue}   sub="cadastrados" />
-        <Stat icon="💰" label="Receita da semana" value={fmtBRL(weekRev)}   color={C.green}  sub="agendamentos ativos" />
+       <Stat icon="📅" label="Hoje"            value={todayApts.length}    color={C.accent} sub="agendamentos"          onClick={()=>onNavigate("calendar")} />
+<Stat icon="⏳" label="Pendentes"        value={pending}             color={C.yellow} sub="aguardando confirmação" onClick={()=>onNavigate("calendar")} />
+<Stat icon="👥" label="Clientes"         value={clients.length}      color={C.blue}   sub="cadastrados"            onClick={()=>onNavigate("clients")} />
+<Stat icon="💰" label="Receita da semana" value={fmtBRL(weekRev)}   color={C.green}  sub="agendamentos ativos"    onClick={()=>onNavigate("calendar")} />
       </div>
 
       <div style={{ display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:16 }}>
@@ -1077,7 +1077,7 @@ async function handleCancelApt() {
     }
   }
   const content = {
-    dashboard: <Dashboard apts={apts} clients={clients} services={services} />,
+   dashboard: <Dashboard apts={apts} clients={clients} services={services} onNavigate={setTab} />,
     calendar:  <Calendar  apts={apts} clients={clients} services={services}
                   onEdit={a=>{setEditApt(a);setAptModal(true)}}
                   onNew={openNewApt} />,
