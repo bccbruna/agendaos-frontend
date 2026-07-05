@@ -418,7 +418,7 @@ function Dashboard({ apts, clients, services, onNavigate, onEdit }) {
        <Stat icon="📅" label="Hoje"            value={todayApts.length}    color={C.accent} sub="agendamentos"          onClick={()=>onNavigate("calendar")} />
 <Stat icon="⏳" label="Pendentes"        value={pending}             color={C.yellow} sub="aguardando confirmação" onClick={()=>onNavigate("calendar")} />
 <Stat icon="👥" label="Clientes"         value={clients.length}      color={C.blue}   sub="cadastrados"            onClick={()=>onNavigate("clients")} />
-<Stat icon="💰" label="Receita da semana" value={fmtBRL(weekRev)}   color={C.green}  sub="agendamentos ativos"    onClick={()=>onNavigate("calendar")} />
+<Stat icon="💰" label="Receita da semana" value={fmtBRL(weekRev)} color={C.green} sub="agendamentos ativos" />
       </div>
 
       <div style={{ display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:16 }}>
