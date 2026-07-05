@@ -435,14 +435,14 @@ function Dashboard({ apts, clients, services }) {
 
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14 }}>
+      <div style={{ display:"grid",gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",gap:14 }}>
         <Stat icon="📅" label="Hoje"            value={todayApts.length}    color={C.accent} sub="agendamentos" />
         <Stat icon="⏳" label="Pendentes"        value={pending}             color={C.yellow} sub="aguardando confirmação" />
         <Stat icon="👥" label="Clientes"         value={clients.length}      color={C.blue}   sub="cadastrados" />
         <Stat icon="💰" label="Receita da semana" value={fmtBRL(weekRev)}   color={C.green}  sub="agendamentos ativos" />
       </div>
 
-      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+      <div style={{ display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:16 }}>
         {/* Próximos */}
         <Card>
           <div style={{ fontSize:11,color:C.accent,letterSpacing:"0.12em",fontWeight:700,marginBottom:16 }}>
@@ -538,161 +538,121 @@ function Dashboard({ apts, clients, services }) {
 
 /* ── CALENDAR (WEEK VIEW) ────────────────────────────────────────── */
 function Calendar({ apts, clients, services, onEdit, onNew }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  
-  const year  = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  
-  const firstDay = new Date(year, month, 1);
-  const lastDay  = new Date(year, month + 1, 0);
-  const startPad = firstDay.getDay(); // dias em branco no início
-  
-  const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-                      "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-  
-  const today = new Date().toISOString().split("T")[0];
+  const [selectedDay, setSelectedDay] = useState(new Date().getDay());
 
-  function prevMonth() {
-    setCurrentDate(new Date(year, month - 1, 1));
-  }
-  function nextMonth() {
-    setCurrentDate(new Date(year, month + 1, 1));
-  }
+  const dayApts = (dayIdx) =>
+    apts.filter(a=>a.date===fmtISO(WEEK[dayIdx])).sort((a,b)=>a.hour-b.hour);
 
-  // Gera array de dias do mês
-  const days = [];
-  for (let i = 0; i < startPad; i++) days.push(null);
-  for (let i = 1; i <= lastDay.getDate(); i++) days.push(i);
-
-  function fmtDay(day) {
-    return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-  }
-
-  const [selectedDay, setSelectedDay] = useState(null);
-  const selectedDate = selectedDay ? fmtDay(selectedDay) : null;
-  const selectedApts = selectedDate ? apts.filter(a => a.date === selectedDate).sort((a,b) => a.hour - b.hour) : [];
+  const today = new Date().getDay();
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      
-      {/* Navegação mês */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <Btn variant="ghost" onClick={prevMonth}>← Mês anterior</Btn>
-        <div style={{ fontWeight:900, fontSize:20 }}>
-          {monthNames[month]} {year}
-        </div>
-        <Btn variant="ghost" onClick={nextMonth}>Próximo mês →</Btn>
-      </div>
-
-      {/* Cabeçalho dias da semana */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4, textAlign:"center" }}>
-        {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d => (
-          <div key={d} style={{ fontSize:10, color:C.muted, fontWeight:700, padding:"8px 0", letterSpacing:"0.1em" }}>{d}</div>
-        ))}
-      </div>
-
-      {/* Grid do mês */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4 }}>
-        {days.map((day, i) => {
-          if (!day) return <div key={`pad-${i}`} />;
-          const dateStr  = fmtDay(day);
-          const dayApts  = apts.filter(a => a.date === dateStr);
-          const isToday  = dateStr === today;
-          const isSel    = day === selectedDay;
-          const isPast   = dateStr < today;
-
+    <div>
+      {/* Day tabs */}
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:20 }}>
+        {WEEK.map((d,i)=>{
+          const count = dayApts(i).length;
+          const isToday = i===today;
+          const isSel   = i===selectedDay;
           return (
-            <div key={day} onClick={() => setSelectedDay(day)} style={{
-              minHeight:80, borderRadius:10, padding:"8px 6px",
-              background: isSel ? `${C.accent}18` : isToday ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
-              border: `1px solid ${isSel ? C.accent+"55" : isToday ? C.accent+"33" : C.border}`,
-              cursor:"pointer", transition:"all 0.15s",
-              opacity: isPast ? 0.5 : 1,
+            <button key={i} onClick={()=>setSelectedDay(i)} style={{
+              padding:"10px 6px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
+              background:isSel?`${C.accent}18`:isToday?"rgba(255,255,255,0.05)":"transparent",
+              border:`1px solid ${isSel?C.accent+"55":isToday?C.border:C.border}`,
+              color:isSel?C.accent:isToday?C.text:C.muted,
+              transition:"all 0.15s",
             }}>
-              <div style={{
-                fontSize:13, fontWeight:isToday||isSel ? 900 : 600,
-                color: isSel ? C.accent : isToday ? C.accent : C.text,
-                marginBottom:4,
-              }}>{day}</div>
-              
-              {dayApts.slice(0,3).map(a => {
-                const service = services.find(s => s.id === a.serviceId);
-                const client  = clients.find(c => c.id === a.clientId);
-                return (
-                  <div key={a.id} style={{
-                    fontSize:9, fontWeight:700, padding:"2px 5px", borderRadius:4, marginBottom:2,
-                    background: `${service?.color || C.accent}22`,
-                    color: service?.color || C.accent,
-                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-                  }}>
-                    {String(a.hour).padStart(2,"0")}h {client?.name?.split(" ")[0] || "—"}
-                  </div>
-                );
-              })}
-              {dayApts.length > 3 && (
-                <div style={{ fontSize:9, color:C.dim }}>+{dayApts.length - 3} mais</div>
+              <div style={{ fontSize:10,letterSpacing:"0.1em",marginBottom:4 }}>{DAYS_SHORT[i]}</div>
+              <div style={{ fontSize:16,fontWeight:900 }}>{d.getDate()}</div>
+              {count>0 && (
+                <div style={{
+                  marginTop:4,minWidth:18,height:18,borderRadius:20,
+                  background:isSel?C.accent:"rgba(168,85,247,0.3)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:10,fontWeight:900,color:"#fff",margin:"4px auto 0",
+                  padding:"0 5px",
+                }}>{count}</div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* Painel do dia selecionado */}
-      {selectedDay && (
-        <Card>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-            <div style={{ fontWeight:900, fontSize:16 }}>
-              {selectedDay}/{String(month+1).padStart(2,"0")}/{year}
-              <span style={{ fontSize:12, color:C.dim, marginLeft:8, fontWeight:400 }}>
-                {selectedApts.length} agendamento{selectedApts.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <Btn variant="primary" size="sm" onClick={() => onNew(fmtDay(selectedDay))}>
-              + Novo agendamento
-            </Btn>
-          </div>
+      {/* Day header */}
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+        <div>
+          <div style={{ fontWeight:900,fontSize:18 }}>{DAYS_FULL[selectedDay]}, {fmt(WEEK[selectedDay])}</div>
+          <div style={{ fontSize:12,color:C.dim }}>{dayApts(selectedDay).length} agendamento{dayApts(selectedDay).length!==1?"s":""}</div>
+        </div>
+        <Btn variant="primary" onClick={()=>onNew(fmtISO(WEEK[selectedDay]))}>+ Novo agendamento</Btn>
+      </div>
 
-          {selectedApts.length === 0 ? (
-            <div style={{ fontSize:13, color:C.dim, textAlign:"center", padding:"24px 0" }}>
-              Nenhum agendamento neste dia.
+      {/* Hour grid */}
+      <Card style={{ padding:0,overflow:"hidden" }}>
+        {HOURS.map(h=>{
+          const slotApts = dayApts(selectedDay).filter(a=>a.hour===h);
+          const isNow = selectedDay===today && new Date().getHours()===h;
+          return (
+            <div key={h} style={{
+              display:"flex",borderBottom:`1px solid ${C.border}`,
+              background:isNow?`${C.accent}06`:"transparent",
+              minHeight:64,
+            }}>
+              {/* Hour label */}
+              <div style={{
+                width:64,flexShrink:0,padding:"8px 12px",
+                fontSize:12,fontWeight:700,color:isNow?C.accent:C.dim,
+                borderRight:`1px solid ${C.border}`,
+                display:"flex",alignItems:"flex-start",paddingTop:10,
+              }}>
+                {String(h).padStart(2,"0")}:00
+                {isNow && <div style={{ width:6,height:6,borderRadius:"50%",background:C.accent,marginLeft:6,marginTop:3,animation:"pulse 1.5s infinite" }}/>}
+              </div>
+
+              {/* Slot */}
+              <div style={{ flex:1,padding:"6px 10px",display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-start" }}>
+                {slotApts.map(a=>{
+                  const client  = clients.find(c=>c.id===a.clientId);
+                  const service = services.find(s=>s.id===a.serviceId);
+                  const sc      = STATUS_META[a.status];
+                  return (
+                    <div key={a.id} onClick={()=>onEdit(a)} style={{
+                      padding:"8px 14px",borderRadius:10,cursor:"pointer",
+                      background:`${service?.color||C.accent}14`,
+                      border:`1px solid ${service?.color||C.accent}33`,
+                      borderLeft:`3px solid ${service?.color||C.accent}`,
+                      minWidth:180,flex:1,transition:"all 0.15s",
+                    }}
+                    onMouseEnter={e=>e.currentTarget.style.transform="scale(1.01)"}
+                    onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+                    >
+                      <div style={{ fontWeight:800,fontSize:13,marginBottom:2 }}>{client?.name}</div>
+                      <div style={{ fontSize:11,color:C.dim }}>{service?.name} · {service?.duration}min</div>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6 }}>
+                        <span style={{ fontSize:11,fontWeight:700,color:C.green }}>{fmtBRL(service?.price||0)}</span>
+                        <span style={{ fontSize:9,fontWeight:700,color:sc.color,background:`${sc.color}18`,padding:"2px 6px",borderRadius:10 }}>
+                          {sc.label}
+                        </span>
+                      </div>
+                      {a.obs && <div style={{ fontSize:10,color:C.dim,marginTop:4,fontStyle:"italic" }}>📝 {a.obs}</div>}
+                    </div>
+                  );
+                })}
+                {slotApts.length===0 && (
+                  <div onClick={()=>onNew(fmtISO(WEEK[selectedDay]),h)} style={{
+                    flex:1,height:48,borderRadius:8,cursor:"pointer",
+                    border:`1px dashed ${C.border}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:11,color:C.dim,transition:"all 0.15s",
+                  }}
+                  onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.accent+"55"; e.currentTarget.style.color=C.accent; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.dim; }}
+                  >+ agendar</div>
+                )}
+              </div>
             </div>
-          ) : (
-            selectedApts.map(a => {
-              const client  = clients.find(c => c.id === a.clientId);
-              const service = services.find(s => s.id === a.serviceId);
-              return (
-                <div key={a.id} onClick={() => onEdit(a)} style={{
-                  display:"flex", alignItems:"center", gap:12,
-                  padding:"12px 14px", borderRadius:10, marginBottom:8, cursor:"pointer",
-                  background: `${service?.color || C.accent}0D`,
-                  border: `1px solid ${service?.color || C.accent}22`,
-                  transition:"all 0.15s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.01)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                >
-                  <div style={{
-                    width:44, height:44, borderRadius:10, flexShrink:0,
-                    background: `${service?.color || C.accent}18`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    fontWeight:900, fontSize:14, color: service?.color || C.accent,
-                  }}>
-                    {String(a.hour).padStart(2,"0")}h
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{client?.name || "—"}</div>
-                    <div style={{ fontSize:12, color:C.dim }}>{service?.name} · {service?.duration}min</div>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontWeight:800, color:C.green, fontSize:13 }}>{fmtBRL(service?.price || 0)}</div>
-                    <Badge status={a.status} />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </Card>
-      )}
+          );
+        })}
+      </Card>
     </div>
   );
 }
@@ -798,7 +758,15 @@ function Services({ services, onEdit, onDelete, onAdd }) {
     </div>
   );
 }
-
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return isMobile;
+}
 /* ═══════════════════════════════════════════════════════════════════
    APP ROOT
 ═══════════════════════════════════════════════════════════════════ */
@@ -810,10 +778,12 @@ const TABS = [
 ];
 
 export default function App() {
+const isMobile = useIsMobile();
 const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "true");
 const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
 const [usuarioEmail, setUsuarioEmail] = useState(() => localStorage.getItem("email") || "");
-  const [tab,      setTab]      = useState("dashboard");
+const [menuOpen, setMenuOpen] = useState(false);  
+const [tab,      setTab]      = useState("dashboard");
   const [apts,     setApts]     = useState(APTS_INIT);
   useEffect(() => {
     fetch(`${API}/clientes`)
@@ -1136,51 +1106,126 @@ onDelete={handleDeleteClient} />,
 
       <div style={{ position:"relative",zIndex:1,display:"flex",minHeight:"100vh" }}>
 
-        {/* SIDEBAR */}
-        <aside style={{ width:220,background:C.surface,borderRight:`1px solid ${C.border}`,
-          display:"flex",flexDirection:"column",padding:"24px 0",
-          position:"sticky",top:0,height:"100vh",flexShrink:0 }}>
+{/* SIDEBAR / MENU MOBILE */}
+{isMobile && (
+  <div style={{
+    position:"fixed", top:0, left:0, right:0, zIndex:50,
+    background:C.surface, borderBottom:`1px solid ${C.border}`,
+    padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between",
+  }}>
+    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{
+        width:32, height:32, borderRadius:8,
+        background:`linear-gradient(135deg,${C.accent},${C.pink})`,
+        display:"flex", alignItems:"center", justifyContent:"center", fontSize:16,
+      }}>📅</div>
+      <div style={{ fontWeight:900, fontSize:15 }}>Agenda<span style={{color:C.accent}}>OS</span></div>
+    </div>
+    <button onClick={()=>setMenuOpen(o=>!o)} style={{
+      background:"none", border:`1px solid ${C.border}`, borderRadius:8,
+      padding:"6px 10px", color:C.text, fontSize:18, cursor:"pointer",
+    }}>☰</button>
+  </div>
+)}
 
-          <div style={{ padding:"0 20px 24px",borderBottom:`1px solid ${C.border}`,marginBottom:20 }}>
-            <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-              <div style={{
-                width:36,height:36,borderRadius:10,
-                background:`linear-gradient(135deg,${C.accent},${C.pink})`,
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
-              }}>📅</div>
-              <div>
-                <div style={{ fontWeight:900,fontSize:16,letterSpacing:"-0.02em" }}>Agenda<span style={{color:C.accent}}>OS</span></div>
-                <div style={{ fontSize:9,color:C.dim,letterSpacing:"0.14em" }}>AGENDAMENTOS</div>
-              </div>
-            </div>
-          </div>
+{/* Drawer mobile */}
+{isMobile && menuOpen && (
+  <div style={{
+    position:"fixed", inset:0, zIndex:49, background:"rgba(0,0,0,0.6)",
+  }} onClick={()=>setMenuOpen(false)}>
+    <div onClick={e=>e.stopPropagation()} style={{
+      position:"absolute", top:0, left:0, bottom:0, width:240,
+      background:C.surface, borderRight:`1px solid ${C.border}`,
+      padding:"70px 10px 24px", display:"flex", flexDirection:"column", gap:4,
+    }}>
+      {TABS.map(t=>{
+        const active = tab===t.id;
+        return (
+          <button key={t.id} onClick={()=>{setTab(t.id);setMenuOpen(false)}} style={{
+            display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:10,
+            fontSize:13, fontWeight:active?700:500,
+            color:active?"#fff":C.muted,
+            background:active?`${C.accent}18`:"transparent",
+            border:`1px solid ${active?C.accent+"44":"transparent"}`,
+            cursor:"pointer", fontFamily:"inherit",
+          }}>
+            <span style={{ fontSize:16 }}>{t.icon}</span>
+            {t.label}
+            {t.id==="dashboard"&&pending>0&&(
+              <span style={{
+                marginLeft:"auto", minWidth:18, height:18, background:C.yellow,
+                borderRadius:20, fontSize:10, fontWeight:900, color:"#000",
+                display:"flex", alignItems:"center", justifyContent:"center", padding:"0 5px",
+              }}>{pending}</span>
+            )}
+          </button>
+        );
+      })}
+      <div style={{ marginTop:"auto", padding:"0 10px" }}>
+        <Btn variant="primary" style={{ width:"100%", justifyContent:"center" }}
+          onClick={()=>{ setEditApt(null); setAptModal(true); setMenuOpen(false); }}>
+          + Novo agendamento
+        </Btn>
+      </div>
+    </div>
+  </div>
+)}
 
-          <nav style={{ display:"flex",flexDirection:"column",gap:4,padding:"0 10px",flex:1 }}>
-            {TABS.map(t=>{
-              const active = tab===t.id;
-              return (
-                <button key={t.id} onClick={()=>setTab(t.id)} style={{
-                  display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,
-                  fontSize:13,fontWeight:active?700:500,
-                  color:active?"#fff":C.muted,
-                  background:active?`${C.accent}18`:"transparent",
-                  border:`1px solid ${active?C.accent+"44":"transparent"}`,
-                  cursor:"pointer",fontFamily:"inherit",transition:"all 0.15s",position:"relative",
-                }}>
-                  <span style={{ fontSize:16 }}>{t.icon}</span>
-                  {t.label}
-                  {t.id==="dashboard"&&pending>0&&(
-                    <span style={{
-                      marginLeft:"auto",minWidth:18,height:18,background:C.yellow,
-                      borderRadius:20,fontSize:10,fontWeight:900,color:"#000",
-                      display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px",
-                    }}>{pending}</span>
-                  )}
-                  {active&&<div style={{ position:"absolute",right:0,top:"20%",bottom:"20%",width:3,background:C.accent,borderRadius:2 }}/>}
-                </button>
-              );
-            })}
-          </nav>
+{/* Sidebar desktop */}
+{!isMobile && (
+<aside style={{ width:220,background:C.surface,borderRight:`1px solid ${C.border}`,
+  display:"flex",flexDirection:"column",padding:"24px 0",
+  position:"sticky",top:0,height:"100vh",flexShrink:0 }}>
+
+  <div style={{ padding:"0 20px 24px",borderBottom:`1px solid ${C.border}`,marginBottom:20 }}>
+    <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+      <div style={{
+        width:36,height:36,borderRadius:10,
+        background:`linear-gradient(135deg,${C.accent},${C.pink})`,
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
+      }}>📅</div>
+      <div>
+        <div style={{ fontWeight:900,fontSize:16,letterSpacing:"-0.02em" }}>Agenda<span style={{color:C.accent}}>OS</span></div>
+        <div style={{ fontSize:9,color:C.dim,letterSpacing:"0.14em" }}>AGENDAMENTOS</div>
+      </div>
+    </div>
+  </div>
+
+  <nav style={{ display:"flex",flexDirection:"column",gap:4,padding:"0 10px",flex:1 }}>
+    {TABS.map(t=>{
+      const active = tab===t.id;
+      return (
+        <button key={t.id} onClick={()=>setTab(t.id)} style={{
+          display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,
+          fontSize:13,fontWeight:active?700:500,
+          color:active?"#fff":C.muted,
+          background:active?`${C.accent}18`:"transparent",
+          border:`1px solid ${active?C.accent+"44":"transparent"}`,
+          cursor:"pointer",fontFamily:"inherit",transition:"all 0.15s",position:"relative",
+        }}>
+          <span style={{ fontSize:16 }}>{t.icon}</span>
+          {t.label}
+          {t.id==="dashboard"&&pending>0&&(
+            <span style={{
+              marginLeft:"auto",minWidth:18,height:18,background:C.yellow,
+              borderRadius:20,fontSize:10,fontWeight:900,color:"#000",
+              display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px",
+            }}>{pending}</span>
+          )}
+          {active&&<div style={{ position:"absolute",right:0,top:"20%",bottom:"20%",width:3,background:C.accent,borderRadius:2 }}/>}
+        </button>
+      );
+    })}
+  </nav>
+
+  <div style={{ padding:"14px 20px",borderTop:`1px solid ${C.border}` }}>
+    <Btn variant="primary" style={{ width:"100%",justifyContent:"center" }}
+      onClick={()=>{ setEditApt(null); setAptModal(true); }}>
+      + Novo agendamento
+    </Btn>
+  </div>
+</aside>
+)}
 
           <div style={{ padding:"14px 20px",borderTop:`1px solid ${C.border}` }}>
             <Btn variant="primary" style={{ width:"100%",justifyContent:"center" }}
@@ -1191,7 +1236,10 @@ onDelete={handleDeleteClient} />,
         </aside>
 
         {/* MAIN */}
-        <main style={{ flex:1,padding:"32px 36px",overflowY:"auto" }}>
+        <main style={{ 
+  flex:1, padding: isMobile ? "70px 16px 24px" : "32px 36px",
+  overflowY:"auto", width:"100%"
+}}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
             <div>
               <div style={{ fontSize:10,letterSpacing:"0.16em",color:C.accent,fontWeight:700,marginBottom:6 }}>
