@@ -1028,8 +1028,7 @@ async function handleDeleteClient(id) {
       alert("Erro ao excluir cliente.");
     }
   }
-   function handleCancelApt() {
-    async function handleCancelApt() {
+async function handleCancelApt() {
     if (!cancelApt) return;
     const client  = clients.find(c => c.id === cancelApt.clientId);
     const service = services.find(s => s.id === cancelApt.serviceId);
@@ -1502,7 +1501,7 @@ localStorage.removeItem("email");}} style={{
   alert("Erro ao salvar serviço.");
 }
 setServiceModal(false);
-        }}>Salvar alterações</Btn>
+      }}>Salvar alterações</Btn>
       </div>
     </div>
   )}
@@ -1533,6 +1532,7 @@ setServiceModal(false);
       </div>
     </div>
   )}
+  
 </Modal>
 
   </div>
