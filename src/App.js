@@ -251,7 +251,6 @@ function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWha
   </Btn>
 )}
 <Btn variant="ghost" onClick={onCancel}>Fechar</Btn>
-        <Btn variant="ghost" onClick={onCancel}>Fechar</Btn>
         <Btn variant="primary" onClick={()=>onSave(form)} disabled={!form.clientId||!form.serviceId}>
           {initial?.id?"Salvar alterações":"Agendar"}
         </Btn>
