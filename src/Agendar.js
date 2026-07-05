@@ -71,7 +71,7 @@ useEffect(() => {
     .then(agendamentos => {
       const ocupados = agendamentos
         .filter(a => a.data === data && a.status !== "cancelado" && a.status !== "cancelled")
-        .map(a => a.hora);
+        .map(a => parseInt(a.hora));
       setHorariosOcupados(ocupados);
     })
     .catch(()=>{});
