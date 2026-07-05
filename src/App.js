@@ -165,7 +165,7 @@ function Modal({ open, onClose, title, width=480, children }) {
 }
 
 /* ── APPOINTMENT FORM ────────────────────────────────────────────── */
-function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWhatsApp, onConfirmWithWhatsApp }) {
+function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWhatsApp, onConfirmWithWhatsApp, onDelete }) {
   const today = new Date().toISOString().split("T")[0];
   const [form, setForm] = useState(initial || {
     clientId:"", serviceId:"", date:today, hour:9, status:"confirmed", obs:"",
@@ -1418,6 +1418,12 @@ localStorage.removeItem("email");}} style={{
           onCancel={()=>{setAptModal(false);setEditApt(null)}}
           onCancelWithWhatsApp={a=>{setCancelApt(a);setAptModal(false);setCancelModal(true)}}
           onConfirmWithWhatsApp={handleConfirmApt}
+          onDelete={async (id)=>{ 
+  if (!window.confirm("Deseja excluir este agendamento?")) return;
+  await fetch(`${API}/agendamentos/${id}`, { method:"DELETE" });
+  setApts(as => as.filter(a => a.id !== id));
+  setAptModal(false);
+}}
         />
       </Modal>
 
