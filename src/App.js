@@ -539,6 +539,7 @@ function Dashboard({ apts, clients, services }) {
 
 /* ── CALENDAR (WEEK VIEW) ────────────────────────────────────────── */
 function Calendar({ apts, clients, services, onEdit, onNew }) {
+  const isMobile = useIsMobile();
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
 
   const dayApts = (dayIdx) =>
