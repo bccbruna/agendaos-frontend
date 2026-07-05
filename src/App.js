@@ -400,7 +400,7 @@ function ClientForm({ initial, onSave, onCancel }) {
 ═══════════════════════════════════════════════════════════════════ */
 
 /* ── DASHBOARD ───────────────────────────────────────────────────── */
-function Dashboard({ apts, clients, services, onNavigate }) {
+function Dashboard({ apts, clients, services, onNavigate, onEdit }) {
   const isMobile = useIsMobile();
   const today     = new Date().toISOString().split("T")[0];
   const todayApts = apts.filter(a=>a.date===today);
@@ -434,7 +434,7 @@ function Dashboard({ apts, clients, services, onNavigate }) {
               const service = services.find(s=>s.id===a.serviceId);
               const dayIdx  = WEEK.findIndex(d=>fmtISO(d)===a.date);
               return (
-                <div key={a.id} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:`1px solid ${C.border}` }}>
+                <div key={a.id} onClick={()=>onEdit(a)} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:`1px solid ${C.border}`, cursor:"pointer" }}>
                   <div style={{
                     width:44,height:44,borderRadius:10,flexShrink:0,
                     background:`${service?.color||C.accent}18`,
@@ -1077,7 +1077,7 @@ async function handleCancelApt() {
     }
   }
   const content = {
-   dashboard: <Dashboard apts={apts} clients={clients} services={services} onNavigate={setTab} />,
+   dashboard: <Dashboard apts={apts} clients={clients} services={services} onNavigate={setTab} onEdit={a=>{setEditApt(a);setAptModal(true)}} />,
     calendar:  <Calendar  apts={apts} clients={clients} services={services}
                   onEdit={a=>{setEditApt(a);setAptModal(true)}}
                   onNew={openNewApt} />,
