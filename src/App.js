@@ -37,14 +37,7 @@ const DAYS_FULL  = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sáb
 const HOURS = Array.from({length:11},(_,i)=>i+8); // 8h–18h
 
 /* ── SEED DATA ───────────────────────────────────────────────────── */
-const SERVICES_INIT = [
-  { id:1, name:"Corte Masculino",  duration:30, price:45,  biz:"barber", color:"#3B82F6" },
-  { id:2, name:"Barba",            duration:30, price:35,  biz:"barber", color:"#3B82F6" },
-  { id:3, name:"Corte + Barba",    duration:60, price:75,  biz:"barber", color:"#3B82F6" },
-  { id:4, name:"Sobrancelha",      duration:20, price:25,  biz:"barber", color:"#3B82F6" },
-  { id:5, name:"Pigmentação",      duration:45, price:60,  biz:"barber", color:"#3B82F6" },
-  { id:6, name:"Hidratação",       duration:30, price:40,  biz:"barber", color:"#3B82F6" },
-];
+const SERVICES_INIT = [];
 
 const CLIENTS_INIT = [
   { id:1,  name:"Ana Silva",       phone:"(11) 98765-4321", email:"ana@email.com",     biz:"salon",   since:"2023-01", visits:12, lastVisit:"2024-07-28" },
