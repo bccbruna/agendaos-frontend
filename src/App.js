@@ -1104,7 +1104,7 @@ onDelete={handleDeleteClient} />,
       <div style={{ position:"fixed",bottom:"-15%",right:"-10%",width:400,height:400,borderRadius:"50%",
         background:"radial-gradient(circle,rgba(236,72,153,0.06),transparent 70%)",pointerEvents:"none",zIndex:0 }}/>
 
-      <div style={{ position:"relative",zIndex:1,display:"flex",minHeight:"100vh" }}>
+      <div style={{ position:"relative",zIndex:1,display:"flex",minHeight:"100vh",flexDirection: isMobile ? "column" : "row" }}>
 
 {/* SIDEBAR / MENU MOBILE */}
 {isMobile && (
