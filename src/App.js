@@ -63,16 +63,7 @@ const WEEK = getWeekDates();
 const fmt = d => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
 const fmtISO = d => d.toISOString().split("T")[0];
 
-const APTS_INIT = [
-  { id:1,  clientId:1, serviceId:1, date:fmtISO(WEEK[1]), hour:9,  status:"confirmed", obs:""          },
-  { id:2,  clientId:2, serviceId:6, date:fmtISO(WEEK[1]), hour:10, status:"confirmed", obs:""          },
-  { id:3,  clientId:4, serviceId:4, date:fmtISO(WEEK[2]), hour:14, status:"confirmed", obs:""          },
-  { id:4,  clientId:3, serviceId:7, date:fmtISO(WEEK[3]), hour:9,  status:"pending",   obs:"Novo paciente" },
-  { id:5,  clientId:5, serviceId:12,date:fmtISO(WEEK[3]), hour:11, status:"confirmed", obs:""          },
-  { id:6,  clientId:6, serviceId:10,date:fmtISO(WEEK[4]), hour:10, status:"confirmed", obs:"Cachorro grande" },
-  { id:7,  clientId:1, serviceId:2, date:fmtISO(WEEK[5]), hour:13, status:"pending",   obs:""          },
-  { id:8,  clientId:2, serviceId:5, date:fmtISO(WEEK[0]), hour:11, status:"done",      obs:""          },
-];
+const APTS_INIT = [];
 
 /* ── HELPERS ─────────────────────────────────────────────────────── */
 const fmtBRL = v => `R$ ${Number(v).toFixed(2).replace(".",",")}`;
