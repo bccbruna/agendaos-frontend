@@ -38,18 +38,12 @@ const HOURS = Array.from({length:11},(_,i)=>i+8); // 8h–18h
 
 /* ── SEED DATA ───────────────────────────────────────────────────── */
 const SERVICES_INIT = [
-  { id:1,  name:"Corte Feminino",      duration:60,  price:80,  biz:"salon",   color:"#EC4899" },
-  { id:2,  name:"Coloração",           duration:120, price:200, biz:"salon",   color:"#EC4899" },
-  { id:3,  name:"Escova Progressiva",  duration:180, price:350, biz:"salon",   color:"#EC4899" },
-  { id:4,  name:"Corte Masculino",     duration:30,  price:45,  biz:"barber",  color:"#3B82F6" },
-  { id:5,  name:"Barba",               duration:30,  price:35,  biz:"barber",  color:"#3B82F6" },
-  { id:6,  name:"Corte + Barba",       duration:60,  price:75,  biz:"barber",  color:"#3B82F6" },
-  { id:7,  name:"Consulta Geral",      duration:30,  price:150, biz:"clinic",  color:"#10B981" },
-  { id:8,  name:"Retorno",             duration:20,  price:80,  biz:"clinic",  color:"#10B981" },
-  { id:9,  name:"Banho Pequeno Porte", duration:60,  price:60,  biz:"petshop", color:"#F59E0B" },
-  { id:10, name:"Tosa + Banho",        duration:90,  price:120, biz:"petshop", color:"#F59E0B" },
-  { id:11, name:"Massagem Relaxante",  duration:60,  price:180, biz:"massage", color:"#A855F7" },
-  { id:12, name:"Manicure",            duration:45,  price:40,  biz:"nail",    color:"#EC4899" },
+  { id:1, name:"Corte Masculino",  duration:30, price:45,  biz:"barber", color:"#3B82F6" },
+  { id:2, name:"Barba",            duration:30, price:35,  biz:"barber", color:"#3B82F6" },
+  { id:3, name:"Corte + Barba",    duration:60, price:75,  biz:"barber", color:"#3B82F6" },
+  { id:4, name:"Sobrancelha",      duration:20, price:25,  biz:"barber", color:"#3B82F6" },
+  { id:5, name:"Pigmentação",      duration:45, price:60,  biz:"barber", color:"#3B82F6" },
+  { id:6, name:"Hidratação",       duration:30, price:40,  biz:"barber", color:"#3B82F6" },
 ];
 
 const CLIENTS_INIT = [
@@ -887,7 +881,23 @@ const [tab,      setTab]      = useState("dashboard");
   }, []);
   const [clients,  setClients]  = useState(CLIENTS_INIT);
   const [services, setServices] = useState(SERVICES_INIT);
-
+useEffect(() => {
+  fetch(`${API}/servicos`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.length > 0) {
+        setServices(data.map(s => ({
+          id:       s.id,
+          name:     s.nome,
+          duration: s.duracao,
+          price:    s.preco,
+          biz:      s.categoria || "barber",
+          color:    "#3B82F6",
+        })));
+      }
+    })
+    .catch(() => console.log("Serviços: usando dados locais"));
+}, []);
   // Modals
   const [aptModal,    setAptModal]    = useState(false);
   const [editApt,     setEditApt]     = useState(null);
@@ -1050,7 +1060,14 @@ async function handleDeleteClient(id) {
                   onAdd={()=>{setEditClient(null);setClientModal(true)}}
                   onEdit={c=>{setEditClient(c);setClientModal(true)}}
 onDelete={handleDeleteClient} />,
-   services:  <Services services={services} onEdit={s=>{setEditService(s);setServiceModal(true)}} onDelete={id=>setServices(ss=>ss.filter(s=>s.id!==id))} onAdd={()=>{setEditService({id:Date.now(),name:"",duration:60,price:0,biz:"cabelo",color:"#EC4899"});setServiceModal(true)}} />,
+   services:  <Services services={services} onEdit={s=>{setEditService(s);setServiceModal(true)}} onDelete={async id=>{
+  try {
+    await fetch(`${API}/servicos/${id}`, { method:"DELETE" });
+    setServices(ss=>ss.filter(s=>s.id!==id));
+  } catch(e) {
+    alert("Erro ao deletar serviço.");
+  }
+}} onAdd={()=>{setEditService({id:Date.now(),name:"",duration:60,price:0,biz:"cabelo",color:"#EC4899"});setServiceModal(true)}} />,
   };
 // ── Tela de Login ─────────────────────────────────────────
   if (!logado) {
@@ -1360,8 +1377,37 @@ localStorage.removeItem("email");}} style={{
       <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
         <Btn variant="ghost" onClick={()=>setServiceModal(false)}>Cancelar</Btn>
         <Btn variant="primary" onClick={()=>{
-          setServices(ss=>ss.map(s=>s.id===editService.id?editService:s));
-          setServiceModal(false);
+          try {
+  if (editService.id && services.find(s => s.id === editService.id)) {
+    await fetch(`${API}/servicos/${editService.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome:      editService.name,
+        duracao:   editService.duration,
+        preco:     editService.price,
+        categoria: editService.biz || "barber",
+      }),
+    });
+    setServices(ss => ss.map(s => s.id === editService.id ? editService : s));
+  } else {
+    const res = await fetch(`${API}/servicos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome:      editService.name,
+        duracao:   editService.duration,
+        preco:     editService.price,
+        categoria: editService.biz || "barber",
+      }),
+    });
+    const saved = await res.json();
+    setServices(ss => [...ss, { ...editService, id: saved.id }]);
+  }
+} catch(e) {
+  alert("Erro ao salvar serviço.");
+}
+setServiceModal(false);
         }}>Salvar alterações</Btn>
       </div>
     </div>
