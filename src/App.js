@@ -1227,15 +1227,6 @@ onDelete={handleDeleteClient} />,
   </div>
 </aside>
 )}
-
-          <div style={{ padding:"14px 20px",borderTop:`1px solid ${C.border}` }}>
-            <Btn variant="primary" style={{ width:"100%",justifyContent:"center" }}
-              onClick={()=>{ setEditApt(null); setAptModal(true); }}>
-              + Novo agendamento
-            </Btn>
-          </div>
-       
-
         {/* MAIN */}
         <main style={{ 
   flex:1, padding: isMobile ? "70px 16px 24px" : "32px 36px",
