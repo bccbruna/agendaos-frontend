@@ -836,7 +836,7 @@ const [novoAgendamento, setNovoAgendamento] = useState(null);
 const ultimoIdRef = useRef(0);
 const [tab,      setTab]      = useState("dashboard");
   const [apts,     setApts]     = useState(APTS_INIT);
-  useEffect(() => {
+useEffect(() => {
     authFetch(`${API}/clientes`)
       .then(r => r.json())
       .then(data => setClients(data.map(c => ({
@@ -863,7 +863,7 @@ const [tab,      setTab]      = useState("dashboard");
         obs:       a.obs || "",
       }))))
       .catch(() => console.log("API offline"));
-  }, []);
+  }, [logado]);
 
   const [clients,  setClients]  = useState(CLIENTS_INIT);
   const [services, setServices] = useState(SERVICES_INIT);
