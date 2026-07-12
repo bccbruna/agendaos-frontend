@@ -837,7 +837,7 @@ const ultimoIdRef = useRef(0);
 const [tab,      setTab]      = useState("dashboard");
   const [apts,     setApts]     = useState(APTS_INIT);
   useEffect(() => {
-    fetch(`${API}/clientes`)
+    authFetch(`${API}/clientes`)
       .then(r => r.json())
       .then(data => setClients(data.map(c => ({
         id:        c.id,
@@ -851,7 +851,7 @@ const [tab,      setTab]      = useState("dashboard");
       }))))
       .catch(() => console.log("API offline"));
 
-    fetch(`${API}/agendamentos`)
+    authFetch(`${API}/agendamentos`)
       .then(r => r.json())
       .then(data => setApts(data.map(a => ({
         id:        a.id,
