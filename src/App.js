@@ -1093,7 +1093,7 @@ onDelete={handleDeleteClient} />,
   } catch(e) {
     alert("Erro ao deletar serviço.");
   }
-}} onAdd={()=>{setEditService({id:Date.now(),name:"",duration:60,price:0,biz:"cabelo",color:"#EC4899"});setServiceModal(true)}} />,
+}} onAdd={()=>{setEditService({id:Date.now(),name:"",duration:60,price:0,biz:"barber",color:"#3B82F6"});setServiceModal(true)}} />,
   };
 // ── Tela de Login ─────────────────────────────────────────
   if (!logado) {
