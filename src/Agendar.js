@@ -77,15 +77,21 @@ useEffect(() => {
     .catch(()=>{});
 }, [data]);
 
-  async function handleAgendar() {
+async function handleAgendar() {
     setErro(""); setLoading(true);
     try {
-      // Cria cliente se não existir
-      const clienteRes = await fetch(`${API}/clientes`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ nome, telefone, email:"", tipo:"cliente" }),
-      });
-      const cliente = await clienteRes.json();
+      // Verifica se cliente já existe pelo telefone
+      const buscaRes = await fetch(`${API}/clientes/buscar?telefone=${telefone}`);
+      let cliente = await buscaRes.json();
+
+      // Se não existe, cria novo cliente
+      if (!cliente || !cliente.id) {
+        const clienteRes = await fetch(`${API}/clientes`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ nome, telefone, email:"", tipo:"cliente" }),
+        });
+        cliente = await clienteRes.json();
+      }
 
       const service = services.find(s=>s.id===serviceId);
       await fetch(`${API}/agendamentos`, {
