@@ -323,7 +323,8 @@ function TrocarSenhaForm({ email, onSucesso }) {
   const [senhaConfirm, setSenhaConfirm] = useState("");
   const [erro,         setErro]         = useState("");
   const [loading,      setLoading]      = useState(false);
-
+  const [mostrarNova, setMostrarNova] = useState(false);
+  const [mostrarConfirm, setMostrarConfirm] = useState(false);
   async function handleTrocar() {
     setErro("");
     if (senhaNova.length < 6) { setErro("A senha deve ter pelo menos 6 caracteres."); return; }
@@ -348,11 +349,23 @@ function TrocarSenhaForm({ email, onSucesso }) {
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
       <div>
         <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>NOVA SENHA</div>
-        <Input type="password" value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder="Mínimo 6 caracteres" />
+        <div style={{ position:"relative" }}>
+  <Input type={mostrarNova ? "text" : "password"} value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder="Mínimo 6 caracteres" />
+  <button onClick={()=>setMostrarNova(m=>!m)} style={{
+    position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+    background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
+  }}>{mostrarNova ? "🙈" : "👁️"}</button>
+</div>
       </div>
       <div>
         <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>CONFIRMAR SENHA</div>
-        <Input type="password" value={senhaConfirm} onChange={e=>setSenhaConfirm(e.target.value)} placeholder="Repita a nova senha" />
+        <div style={{ position:"relative" }}>
+  <Input type={mostrarConfirm ? "text" : "password"} value={senhaConfirm} onChange={e=>setSenhaConfirm(e.target.value)} placeholder="Repita a nova senha" />
+  <button onClick={()=>setMostrarConfirm(m=>!m)} style={{
+    position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+    background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
+  }}>{mostrarConfirm ? "🙈" : "👁️"}</button>
+</div>
       </div>
       {erro && (
         <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
