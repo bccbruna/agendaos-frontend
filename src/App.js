@@ -284,6 +284,7 @@ function LoginForm({ onLogin }) {
     }
     setLoading(false);
   }
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -293,8 +294,15 @@ function LoginForm({ onLogin }) {
       </div>
       <div>
         <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>SENHA</div>
-        <Input type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••"
-          onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+        <div style={{ position:"relative" }}>
+  <Input type={mostrarSenha ? "text" : "password"} value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••"
+    onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+  <button onClick={()=>setMostrarSenha(m=>!m)} style={{
+    position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+    background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
+  }}>{mostrarSenha ? "🙈" : "👁️"}</button>
+</div>
+          onKeyDown={e=>e.key==="Enter"&&handleLogin()} /
       </div>
       {erro && (
         <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
