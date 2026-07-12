@@ -49,14 +49,7 @@ const HOURS = Array.from({length:11},(_,i)=>i+8); // 8h–18h
 /* ── SEED DATA ───────────────────────────────────────────────────── */
 const SERVICES_INIT = [];
 
-const CLIENTS_INIT = [
-  { id:1,  name:"Ana Silva",       phone:"(11) 98765-4321", email:"ana@email.com",     biz:"salon",   since:"2023-01", visits:12, lastVisit:"2024-07-28" },
-  { id:2,  name:"João Pereira",    phone:"(11) 91234-5678", email:"joao@email.com",    biz:"barber",  since:"2023-06", visits:24, lastVisit:"2024-08-01" },
-  { id:3,  name:"Maria Santos",    phone:"(11) 99887-6655", email:"maria@email.com",   biz:"clinic",  since:"2024-01", visits:3,  lastVisit:"2024-07-15" },
-  { id:4,  name:"Carlos Oliveira", phone:"(11) 97654-3210", email:"carlos@email.com",  biz:"barber",  since:"2022-11", visits:36, lastVisit:"2024-08-01" },
-  { id:5,  name:"Beatriz Lima",    phone:"(11) 95555-1234", email:"bia@email.com",     biz:"nail",    since:"2024-03", visits:8,  lastVisit:"2024-07-30" },
-  { id:6,  name:"Pedro Costa",     phone:"(11) 93333-9876", email:"pedro@email.com",   biz:"petshop", since:"2023-09", visits:15, lastVisit:"2024-07-25" },
-];
+const CLIENTS_INIT = [];
 
 // Gera agendamentos para a semana atual
 function getWeekDates() {
@@ -278,7 +271,7 @@ function LoginForm({ onLogin }) {
   async function handleLogin() {
     setErro(""); setLoading(true);
     try {
-      const res = await fetch(`${API}/login`, {
+      const res = await authFetch(`${API}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
@@ -341,7 +334,7 @@ function TrocarSenhaForm({ email, onSucesso }) {
     if (senhaNova !== senhaConfirm) { setErro("As senhas não coincidem."); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${API}/trocar-senha`, {
+      const res = await authFetch(`${API}/trocar-senha`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha_atual:"123456", senha_nova:senhaNova }),
@@ -941,7 +934,7 @@ useEffect(() => {
   const check = async () => {
     console.log("Verificando agendamentos...");
     try {
-      const res = await fetch(`${API}/agendamentos`);
+      const res = await authFetch(`${API}/agendamentos`);
       const data = await res.json();
       const pendentes = data.filter(a => a.status === "pending");
       if (pendentes.length > 0) {
@@ -984,7 +977,7 @@ if (conflito) {
         setApts(as=>as.map(a=>a.id===editApt.id?{...a,...form,clientId:parseInt(form.clientId),serviceId:parseInt(form.serviceId),hour:parseInt(form.hour)}:a));
       } else {
         const service = services.find(s=>s.id===parseInt(form.serviceId));
-        const res = await fetch(`${API}/agendamentos`, {
+        const res = await authFetch(`${API}/agendamentos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1019,7 +1012,7 @@ if (conflito) {
       if (editClient) {
         setClients(cs=>cs.map(c=>c.id===editClient.id?{...c,...form}:c));
       } else {
-        const res = await fetch(`${API}/clientes`, {
+        const res = await authFetch(`${API}/clientes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1050,7 +1043,7 @@ if (conflito) {
 async function handleDeleteClient(id) {
     if (!window.confirm("Deseja excluir este cliente?")) return;
     try {
-      await fetch(`${API}/clientes/${id}`, { method: "DELETE" });
+      await authFetch(`${API}/clientes/${id}`, { method: "DELETE" });
       setClients(cs => cs.filter(c => c.id !== id));
     } catch(e) {
       alert("Erro ao excluir cliente.");
@@ -1062,7 +1055,7 @@ async function handleCancelApt() {
     const service = services.find(s => s.id === cancelApt.serviceId);
     
     try {
-      await fetch(`${API}/agendamentos/${cancelApt.id}/status?status=cancelled`, {
+      await authFetch(`${API}/agendamentos/${cancelApt.id}/status?status=cancelled`, {
         method: "PUT",
       });
     } catch(e) {}
@@ -1107,7 +1100,7 @@ async function handleCancelApt() {
    
     if (!window.confirm("Deseja excluir este agendamento?")) return;
     try {
-      await fetch(`${API}/agendamentos/${id}`, { method: "DELETE" });
+      await authFetch(`${API}/agendamentos/${id}`, { method: "DELETE" });
       setApts(as => as.filter(a => a.id !== id));
     } catch(e) {
       alert("Erro ao excluir agendamento.");
@@ -1124,7 +1117,7 @@ async function handleCancelApt() {
 onDelete={handleDeleteClient} />,
    services:  <Services services={services} onEdit={s=>{setEditService(s);setServiceModal(true)}} onDelete={async id=>{
   try {
-    await fetch(`${API}/servicos/${id}`, { method:"DELETE" });
+    await authFetch(`${API}/servicos/${id}`, { method:"DELETE" });
     setServices(ss=>ss.filter(s=>s.id!==id));
   } catch(e) {
     alert("Erro ao deletar serviço.");
@@ -1428,7 +1421,7 @@ localStorage.removeItem("email");}} style={{
       </Btn>
       <Btn variant="primary" size="sm" style={{flex:1, justifyContent:"center"}}
         onClick={async ()=>{ 
-  const res = await fetch(`${API}/agendamentos`);
+  const res = await authFetch(`${API}/agendamentos`);
   const data = await res.json();
   setApts(data.map(a => ({
     id: a.id, clientId: a.cliente_id,
@@ -1456,7 +1449,7 @@ localStorage.removeItem("email");}} style={{
           onConfirmWithWhatsApp={handleConfirmApt}
           onDelete={async (id)=>{ 
   if (!window.confirm("Deseja excluir este agendamento?")) return;
-  await fetch(`${API}/agendamentos/${id}`, { method:"DELETE" });
+  await authFetch(`${API}/agendamentos/${id}`, { method:"DELETE" });
   setApts(as => as.filter(a => a.id !== id));
   setAptModal(false);
 }}
@@ -1507,7 +1500,7 @@ localStorage.removeItem("email");}} style={{
         <Btn variant="primary" onClick={async ()=>{
           try {
   if (editService.id && services.find(s => s.id === editService.id)) {
-    await fetch(`${API}/servicos/${editService.id}`, {
+    await authFetch(`${API}/servicos/${editService.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1519,7 +1512,7 @@ localStorage.removeItem("email");}} style={{
     });
     setServices(ss => ss.map(s => s.id === editService.id ? editService : s));
   } else {
-    const res = await fetch(`${API}/servicos`, {
+    const res = await authFetch(`${API}/servicos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
