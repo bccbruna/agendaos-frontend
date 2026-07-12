@@ -2,7 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Agendar from "./Agendar";
 const API = "https://agendaos-backend-production.up.railway.app";
-
+const authFetch = (url, options = {}) => {
+  const token = localStorage.getItem("token");
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+};
 /* ── TOKENS ──────────────────────────────────────────────────────── */
 const C = {
   bg:      "#08090F",
@@ -302,7 +312,7 @@ function LoginForm({ onLogin }) {
     background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
   }}>{mostrarSenha ? "🙈" : "👁️"}</button>
 </div>
-          onKeyDown={e=>e.key==="Enter"&&handleLogin()} /
+
       </div>
       {erro && (
         <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
