@@ -275,7 +275,7 @@ function LoginForm({ onLogin }) {
       });
       const data = await res.json();
       if (data.ok) {
-        onLogin(email, data.primeiro_acesso);
+        onLogin(email, data.primeiro_acesso, data.token);
       } else {
         setErro(data.erro || "Email ou senha incorretos");
       }
@@ -1147,13 +1147,14 @@ onDelete={handleDeleteClient} />,
             </div>
           </div>
 
-          <LoginForm
-            onLogin={(email, primeiro) => {
+            <LoginForm
+            onLogin={(email, primeiro, token) => {
               setLogado(true);
               setUsuarioEmail(email);
               setPrimeiroAcesso(primeiro);
               localStorage.setItem("logado", "true");
               localStorage.setItem("email", email);
+              if (token) localStorage.setItem("token", token);
             }}
           />
         </div>
