@@ -864,36 +864,7 @@ const [tab,      setTab]      = useState("dashboard");
       }))))
       .catch(() => console.log("API offline"));
   }, []);
-  useEffect(() => {
-    // Carrega clientes do banco
-    fetch(`${API}/clientes`)
-      .then(r => r.json())
-      .then(data => setClients(data.map(c => ({
-        id:        c.id,
-        name:      c.nome,
-        phone:     c.telefone,
-        email:     c.email,
-        biz:       c.tipo,
-        visits:    0,
-        since:     c.criado_em?.slice(0,7) || "",
-        lastVisit: "—",
-      }))))
-      .catch(() => console.log("API offline, usando dados locais"));
 
-    // Carrega agendamentos do banco
-    fetch(`${API}/agendamentos`)
-      .then(r => r.json())
-      .then(data => setApts(data.map(a => ({
-        id:        a.id,
-        clientId:  a.cliente_id,
-        serviceId: a.serviceId || 1,
-        date:      a.data,
-        hour:      a.hora,
-        status:    a.status,
-        obs:       a.obs || "",
-      }))))
-      .catch(() => console.log("API offline, usando dados locais"));
-  }, []);
   const [clients,  setClients]  = useState(CLIENTS_INIT);
   const [services, setServices] = useState(SERVICES_INIT);
 useEffect(() => {
