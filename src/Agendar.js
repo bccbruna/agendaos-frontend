@@ -48,7 +48,7 @@ export default function Agendar() {
   const [hora,      setHora]      = useState(9);
   const [loading,   setLoading]   = useState(false);
   const [erro,      setErro]      = useState("");
-  const [horariosOcupados, setHorariosOcupados] = useState([]);
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState([]);
 
   const HOURS = Array.from({length:11},(_,i)=>i+8);
 
@@ -65,17 +65,12 @@ export default function Agendar() {
 }, []);
 
 useEffect(() => {
-  if (!data) return;
-  fetch(`${API}/agendamentos`)
-    .then(r=>r.json())
-    .then(agendamentos => {
-      const ocupados = agendamentos
-        .filter(a => a.data === data && a.status !== "cancelado" && a.status !== "cancelled")
-        .map(a => parseInt(a.hora));
-      setHorariosOcupados(ocupados);
-    })
-    .catch(()=>{});
-}, [data]);
+  if (!data || !serviceId) return;
+  fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}`)
+    .then(r => r.json())
+    .then(horarios => setHorariosDisponiveis(horarios))
+    .catch(() => setHorariosDisponiveis([]));
+}, [data, serviceId]);
 
 async function handleAgendar() {
     setErro(""); setLoading(true);
@@ -227,7 +222,8 @@ async function handleAgendar() {
                 <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>HORÁRIO</div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
                   {HOURS.map(h=>{
-  const ocupado = horariosOcupados.includes(h);
+  const slot = `${String(h).padStart(2,"0")}:00`;
+  const ocupado = data ? !horariosDisponiveis.includes(slot) : false;
   return (
     <button key={h} onClick={()=>!ocupado && setHora(h)} style={{
       padding:"10px", borderRadius:10, cursor: ocupado ? "not-allowed" : "pointer",

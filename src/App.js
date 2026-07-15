@@ -826,7 +826,7 @@ const TABS = [
   { id:"services",  icon:"✨", label:"Serviços"  },
 ];
 
-export default function App() {
+function AdminApp() {
 const isMobile = useIsMobile();
 const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "true");
 const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
@@ -1167,10 +1167,6 @@ onDelete={handleDeleteClient} />,
     );
   }
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/agendar" element={<Agendar />} />
-        <Route path="/*" element={
           <div style={{ minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'DM Sans',sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
@@ -1535,7 +1531,15 @@ setServiceModal(false);
 </Modal>
 
   </div>
-        } />
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/agendar" element={<Agendar />} />
+        <Route path="/*" element={<AdminApp />} />
       </Routes>
     </BrowserRouter>
   );
