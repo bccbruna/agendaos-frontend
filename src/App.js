@@ -169,10 +169,10 @@ function Modal({ open, onClose, title, width=480, children }) {
 }
 
 /* ── APPOINTMENT FORM ────────────────────────────────────────────── */
-function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWhatsApp, onConfirmWithWhatsApp, onDelete }) {
+function AptForm({ initial, clients, services, profissionais, onSave, onCancel, onCancelWithWhatsApp, onConfirmWithWhatsApp, onDelete }) {
   const today = new Date().toISOString().split("T")[0];
   const [form, setForm] = useState(initial || {
-    clientId:"", serviceId:"", date:today, hour:9, status:"confirmed", obs:"",
+    clientId:"", serviceId:"", profissionalId:"", date:today, hour:9, status:"confirmed", obs:"",
   });
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
   const service = services.find(s=>s.id===parseInt(form.serviceId));
@@ -197,6 +197,16 @@ function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWha
         }}>
           <option value="">Selecione o serviço</option>
           {services.map(s=><option key={s.id} value={s.id}>{s.name} · {s.duration}min · {fmtBRL(s.price)}</option>)}
+        </select>
+      </div>
+      <div>
+        <div style={{ fontSize:10,color:C.muted,marginBottom:6 }}>PROFISSIONAL</div>
+        <select value={form.profissionalId||""} onChange={e=>set("profissionalId",e.target.value)} style={{
+          width:"100%",padding:"9px 14px",background:"rgba(255,255,255,0.05)",
+          border:`1px solid ${C.border}`,borderRadius:10,color:C.text,fontSize:13,fontFamily:"inherit",outline:"none",
+        }}>
+          <option value="">Qualquer profissional</option>
+          {profissionais.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
       {service && (
@@ -860,6 +870,35 @@ function Services({ services, onEdit, onDelete, onAdd }) {
     </div>
   );
 }
+/* ── PROFISSIONAIS ───────────────────────────────────────────────── */
+function Profissionais({ profissionais, onEdit, onDelete, onAdd }) {
+  return (
+    <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
+      <div style={{ display:"flex",justifyContent:"flex-end" }}>
+        <Btn variant="primary" onClick={onAdd}>+ Novo profissional</Btn>
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10 }}>
+        {profissionais.map(p=>(
+          <Card key={p.id} glow={C.accent}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6 }}>
+              <div style={{ fontWeight:800,fontSize:14,color:C.accent }}>{p.name}</div>
+              <div style={{ display:"flex", gap:6 }}>
+                <Btn variant="ghost" size="sm" onClick={()=>onEdit(p)}>✏️</Btn>
+                <Btn variant="danger" size="sm" onClick={()=>onDelete(p.id)}>🗑️</Btn>
+              </div>
+            </div>
+            <div style={{ fontSize:13, color:C.dim }}>{p.especialidade || "—"}</div>
+          </Card>
+        ))}
+        {profissionais.length===0 && (
+          <div style={{ fontSize:13,color:C.dim,gridColumn:"1/-1",textAlign:"center",padding:"24px 0" }}>
+            Nenhum profissional cadastrado ainda.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -873,10 +912,11 @@ function useIsMobile() {
    APP ROOT
 ═══════════════════════════════════════════════════════════════════ */
 const TABS = [
-  { id:"dashboard", icon:"📊", label:"Dashboard" },
-  { id:"calendar",  icon:"📅", label:"Agenda"    },
-  { id:"clients",   icon:"👥", label:"Clientes"  },
-  { id:"services",  icon:"✨", label:"Serviços"  },
+  { id:"dashboard",     icon:"📊", label:"Dashboard"     },
+  { id:"calendar",      icon:"📅", label:"Agenda"        },
+  { id:"clients",       icon:"👥", label:"Clientes"      },
+  { id:"services",      icon:"✨", label:"Serviços"      },
+  { id:"profissionais", icon:"💈", label:"Profissionais" },
 ];
 
 function AdminApp() {
@@ -909,6 +949,7 @@ useEffect(() => {
       .then(data => setApts(data.map(a => ({
         id:        a.id,
         clientId:  a.cliente_id,
+        profissionalId: a.profissional_id,
         serviceId: a.serviceId || 1,
         date:      a.data,
         hour:      a.hora,
@@ -937,6 +978,18 @@ useEffect(() => {
     })
     .catch(() => console.log("Serviços: usando dados locais"));
 }, []);
+
+  const [profissionais, setProfissionais] = useState([]);
+  useEffect(() => {
+    fetch(`${API}/profissionais`)
+      .then(r => r.json())
+      .then(data => setProfissionais(data.map(p => ({
+        id: p.id,
+        name: p.nome,
+        especialidade: p.especialidade,
+      }))))
+      .catch(() => console.log("Profissionais: usando dados locais"));
+  }, []);
   // Modals
   const [aptModal,    setAptModal]    = useState(false);
   const [editApt,     setEditApt]     = useState(null);
@@ -949,6 +1002,8 @@ useEffect(() => {
 const [cancelApt,    setCancelApt]    = useState(null);
 const [cancelMsg,    setCancelMsg]    = useState("");
 const [serviceModal, setServiceModal] = useState(false);
+const [editProfissional,   setEditProfissional]   = useState(null);
+const [profissionalModal,  setProfissionalModal]  = useState(false);
 
   const pending = apts.filter(a=>a.status==="pending").length;
 // Polling para novos agendamentos
@@ -985,11 +1040,12 @@ useEffect(() => {
   }
 
  async function handleSaveApt(form) {
-  // Verifica horário ocupado
-const conflito = apts.find(a => 
-  a.date === form.date && 
-  a.hour === parseInt(form.hour) && 
+  // Verifica horário ocupado (só conflita se for o mesmo profissional, ou se nenhum foi escolhido)
+const conflito = apts.find(a =>
+  a.date === form.date &&
+  a.hour === parseInt(form.hour) &&
   a.status !== "cancelled" &&
+  (!form.profissionalId || !a.profissionalId || a.profissionalId === parseInt(form.profissionalId)) &&
   (!editApt || a.id !== editApt.id)
 );
 if (conflito) {
@@ -998,7 +1054,7 @@ if (conflito) {
 }
     try {
       if (editApt) {
-        setApts(as=>as.map(a=>a.id===editApt.id?{...a,...form,clientId:parseInt(form.clientId),serviceId:parseInt(form.serviceId),hour:parseInt(form.hour)}:a));
+        setApts(as=>as.map(a=>a.id===editApt.id?{...a,...form,clientId:parseInt(form.clientId),serviceId:parseInt(form.serviceId),profissionalId:form.profissionalId?parseInt(form.profissionalId):null,hour:parseInt(form.hour)}:a));
       } else {
         const service = services.find(s=>s.id===parseInt(form.serviceId));
         const res = await authFetch(`${API}/agendamentos`, {
@@ -1006,6 +1062,7 @@ if (conflito) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cliente_id: parseInt(form.clientId),
+            profissional_id: form.profissionalId ? parseInt(form.profissionalId) : null,
             servico:    service?.name || "",
             data:       form.date,
             hora:       parseInt(form.hour),
@@ -1018,6 +1075,7 @@ if (conflito) {
         setApts(as=>[...as,{
           id:        saved.id,
           clientId:  saved.cliente_id,
+          profissionalId: saved.profissional_id,
           serviceId: parseInt(form.serviceId),
           date:      saved.data,
           hour:      saved.hora,
@@ -1147,6 +1205,17 @@ onDelete={handleDeleteClient} />,
     alert("Erro ao deletar serviço.");
   }
 }} onAdd={()=>{setEditService({id:Date.now(),name:"",duration:60,price:0,biz:"barber",color:"#3B82F6"});setServiceModal(true)}} />,
+   profissionais: <Profissionais profissionais={profissionais}
+      onEdit={p=>{setEditProfissional(p);setProfissionalModal(true)}}
+      onDelete={async id=>{
+        try {
+          await authFetch(`${API}/profissionais/${id}`, { method:"DELETE" });
+          setProfissionais(ps=>ps.filter(p=>p.id!==id));
+        } catch(e) {
+          alert("Erro ao deletar profissional.");
+        }
+      }}
+      onAdd={()=>{setEditProfissional({name:"",especialidade:""});setProfissionalModal(true)}} />,
   };
 // ── Tela de Login ─────────────────────────────────────────
   if (!logado) {
@@ -1376,6 +1445,7 @@ onDelete={handleDeleteClient} />,
                 {tab==="calendar"  && `Agenda da Semana`}
                 {tab==="clients"   && "Meus Clientes"}
                 {tab==="services"  && "Serviços Oferecidos"}
+                {tab==="profissionais" && "Profissionais"}
               </h1>
             </div>
             <div style={{ display:"flex",alignItems:"center",gap:8,padding:"7px 14px",
@@ -1461,8 +1531,8 @@ localStorage.removeItem("email");}} style={{
       <Modal open={aptModal} onClose={()=>{setAptModal(false);setEditApt(null)}}
         title={editApt?"Editar agendamento":"Novo agendamento"}>
         <AptForm
-          initial={editApt ? editApt : (aptDate ? { clientId:"",serviceId:"",date:aptDate,hour:aptHour||9,status:"confirmed",obs:"" } : null)}
-          clients={clients} services={services}
+          initial={editApt ? editApt : (aptDate ? { clientId:"",serviceId:"",profissionalId:"",date:aptDate,hour:aptHour||9,status:"confirmed",obs:"" } : null)}
+          clients={clients} services={services} profissionais={profissionais}
           onSave={handleSaveApt}
           onCancel={()=>{setAptModal(false);setEditApt(null)}}
           onCancelWithWhatsApp={a=>{setCancelApt(a);setAptModal(false);setCancelModal(true)}}
@@ -1550,6 +1620,61 @@ localStorage.removeItem("email");}} style={{
 }
 setServiceModal(false);
       }}>Salvar alterações</Btn>
+      </div>
+    </div>
+  )}
+</Modal>
+{/* Modal profissional */}
+<Modal open={profissionalModal} onClose={()=>setProfissionalModal(false)} title={editProfissional?.id ? "Editar Profissional" : "Novo Profissional"}>
+  {editProfissional && (
+    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      <div>
+        <div style={{ fontSize:10,color:C.muted,marginBottom:6 }}>NOME</div>
+        <Input
+          value={editProfissional.name}
+          onChange={e=>setEditProfissional(p=>({...p,name:e.target.value}))}
+          placeholder="Nome do profissional"
+        />
+      </div>
+      <div>
+        <div style={{ fontSize:10,color:C.muted,marginBottom:6 }}>ESPECIALIDADE (opcional)</div>
+        <Input
+          value={editProfissional.especialidade || ""}
+          onChange={e=>setEditProfissional(p=>({...p,especialidade:e.target.value}))}
+          placeholder="ex: Corte e barba"
+        />
+      </div>
+      <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
+        <Btn variant="ghost" onClick={()=>setProfissionalModal(false)}>Cancelar</Btn>
+        <Btn variant="primary" disabled={!editProfissional.name} onClick={async ()=>{
+          try {
+            if (editProfissional.id) {
+              await authFetch(`${API}/profissionais/${editProfissional.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nome: editProfissional.name,
+                  especialidade: editProfissional.especialidade || "",
+                }),
+              });
+              setProfissionais(ps => ps.map(p => p.id === editProfissional.id ? editProfissional : p));
+            } else {
+              const res = await authFetch(`${API}/profissionais`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nome: editProfissional.name,
+                  especialidade: editProfissional.especialidade || "",
+                }),
+              });
+              const saved = await res.json();
+              setProfissionais(ps => [...ps, { ...editProfissional, id: saved.id }]);
+            }
+          } catch(e) {
+            alert("Erro ao salvar profissional.");
+          }
+          setProfissionalModal(false);
+        }}>Salvar</Btn>
       </div>
     </div>
   )}

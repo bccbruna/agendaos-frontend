@@ -40,10 +40,12 @@ function Btn({ children, onClick, disabled }) {
 
 export default function Agendar() {
   const [services,  setServices]  = useState([]);
-  const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=horário, 4=confirmado
+  const [profissionais, setProfissionais] = useState([]);
+  const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=profissional, 4=horário, 5=confirmado
   const [nome,      setNome]      = useState("");
   const [telefone,  setTelefone]  = useState("");
   const [serviceId, setServiceId] = useState(null);
+  const [profissionalId, setProfissionalId] = useState(undefined); // undefined=nao escolheu, "any"=sem preferencia, ou id
   const [data,      setData]      = useState("");
   const [hora,      setHora]      = useState(9);
   const [loading,   setLoading]   = useState(false);
@@ -65,12 +67,24 @@ export default function Agendar() {
 }, []);
 
 useEffect(() => {
+  fetch(`${API}/profissionais`)
+    .then(r=>r.json())
+    .then(data => setProfissionais(data.map(p => ({
+      id: p.id,
+      name: p.nome,
+      especialidade: p.especialidade,
+    }))))
+    .catch(()=>{});
+}, []);
+
+useEffect(() => {
   if (!data || !serviceId) return;
-  fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}`)
+  const profParam = (profissionalId && profissionalId !== "any") ? `&profissional_id=${profissionalId}` : "";
+  fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}${profParam}`)
     .then(r => r.json())
     .then(horarios => setHorariosDisponiveis(horarios))
     .catch(() => setHorariosDisponiveis([]));
-}, [data, serviceId]);
+}, [data, serviceId, profissionalId]);
 
 async function handleAgendar() {
     setErro(""); setLoading(true);
@@ -93,6 +107,7 @@ async function handleAgendar() {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           cliente_id: cliente.id,
+          profissional_id: (profissionalId && profissionalId !== "any") ? profissionalId : null,
           servico:    service?.name || "",
           data,
           hora,
@@ -101,7 +116,7 @@ async function handleAgendar() {
           preco:      service?.price || 0,
         }),
       });
-      setStep(4);
+      setStep(5);
     } catch {
       setErro("Erro ao agendar. Tente novamente.");
     }
@@ -109,6 +124,7 @@ async function handleAgendar() {
   }
 
   const service = services.find(s=>s.id===serviceId);
+  const profissional = profissionais.find(p=>p.id===profissionalId);
   const today   = new Date().toISOString().split("T")[0];
 
   return (
@@ -129,9 +145,9 @@ async function handleAgendar() {
       <div style={{ maxWidth:480, margin:"0 auto" }}>
 
         {/* Steps indicator */}
-        {step < 4 && (
+        {step < 5 && (
           <div style={{ display:"flex", gap:8, marginBottom:24 }}>
-            {["Seus dados","Serviço","Horário"].map((s,i)=>(
+            {["Seus dados","Serviço","Profissional","Horário"].map((s,i)=>(
               <div key={s} style={{ flex:1, textAlign:"center" }}>
                 <div style={{
                   height:4, borderRadius:2, marginBottom:6,
@@ -204,8 +220,50 @@ async function handleAgendar() {
           </div>
         )}
 
-        {/* Step 3 — Escolher data e hora */}
+        {/* Step 3 — Escolher profissional */}
         {step===3 && (
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:24 }}>
+            <div style={{ fontWeight:800, fontSize:18, marginBottom:20 }}>Escolha o profissional</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              <div onClick={()=>setProfissionalId("any")} style={{
+                padding:"14px 16px", borderRadius:12, cursor:"pointer",
+                background: profissionalId==="any" ? `${C.accent}18` : "rgba(255,255,255,0.04)",
+                border:`1px solid ${profissionalId==="any" ? C.accent+"55" : C.border}`,
+                transition:"all 0.15s",
+              }}>
+                <div style={{ fontWeight:700, fontSize:14 }}>🎲 Sem preferência</div>
+                <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>Qualquer profissional disponível</div>
+              </div>
+              {profissionais.map(p=>(
+                <div key={p.id} onClick={()=>setProfissionalId(p.id)} style={{
+                  padding:"14px 16px", borderRadius:12, cursor:"pointer",
+                  background: profissionalId===p.id ? `${C.accent}18` : "rgba(255,255,255,0.04)",
+                  border:`1px solid ${profissionalId===p.id ? C.accent+"55" : C.border}`,
+                  transition:"all 0.15s",
+                }}>
+                  <div style={{ fontWeight:700, fontSize:14 }}>💈 {p.name}</div>
+                  {p.especialidade && <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{p.especialidade}</div>}
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:10, marginTop:16 }}>
+              <button onClick={()=>setStep(2)} style={{
+                flex:1, padding:"10px", borderRadius:10, cursor:"pointer",
+                background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
+                color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
+              }}>← Voltar</button>
+              <button onClick={()=>setStep(4)} disabled={profissionalId===undefined} style={{
+                flex:2, padding:"10px", borderRadius:10, cursor:profissionalId!==undefined?"pointer":"not-allowed",
+                background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
+                border:"none", color:"#fff", fontFamily:"inherit", fontWeight:700, fontSize:13,
+                opacity:profissionalId!==undefined?1:0.5,
+              }}>Próximo →</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4 — Escolher data e hora */}
+        {step===4 && (
           <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:24 }}>
             <div style={{ fontWeight:800, fontSize:18, marginBottom:20 }}>Escolha o horário</div>
             <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -248,6 +306,7 @@ async function handleAgendar() {
                   borderRadius:10, padding:"12px 14px", fontSize:12, color:C.muted }}>
                   📋 <strong style={{color:C.text}}>{service?.name}</strong> · {service?.duration}min ·{" "}
                   <strong style={{color:C.green}}>R$ {Number(service?.price||0).toFixed(2).replace(".",",")}</strong><br/>
+                  💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/>
                   📅 {data.split("-").reverse().join("/")} às {String(hora).padStart(2,"0")}h<br/>
                   👤 {nome} · 📱 {telefone}
                 </div>
@@ -259,7 +318,7 @@ async function handleAgendar() {
               )}
 
               <div style={{ display:"flex", gap:10 }}>
-                <button onClick={()=>setStep(2)} style={{
+                <button onClick={()=>setStep(3)} style={{
                   flex:1, padding:"10px", borderRadius:10, cursor:"pointer",
                   background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
                   color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
@@ -276,8 +335,8 @@ async function handleAgendar() {
           </div>
         )}
 
-        {/* Step 4 — Confirmado */}
-        {step===4 && (
+        {/* Step 5 — Confirmado */}
+        {step===5 && (
           <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16,
             padding:40, textAlign:"center" }}>
             <div style={{ fontSize:56, marginBottom:16 }}>🎉</div>
@@ -290,9 +349,10 @@ async function handleAgendar() {
             <div style={{ background:`${C.accent}0D`, border:`1px solid ${C.accent}22`,
               borderRadius:10, padding:"14px", fontSize:13, color:C.muted, marginBottom:20 }}>
               📋 <strong style={{color:C.text}}>{service?.name}</strong><br/>
+              💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/>
               📅 {data.split("-").reverse().join("/")} às {String(hora).padStart(2,"0")}h
             </div>
-            <button onClick={()=>{setStep(1);setNome("");setTelefone("");setServiceId(null);setData("");}} style={{
+            <button onClick={()=>{setStep(1);setNome("");setTelefone("");setServiceId(null);setProfissionalId(undefined);setData("");}} style={{
               padding:"10px 24px", borderRadius:10, cursor:"pointer",
               background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
               color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
