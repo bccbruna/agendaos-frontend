@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Agendar from "./Agendar";
+import RedefinirSenha from "./RedefinirSenha";
 const API = "https://agendaos-backend-production.up.railway.app";
 const authFetch = (url, options = {}) => {
   const token = localStorage.getItem("token");
@@ -263,10 +264,13 @@ function AptForm({ initial, clients, services, onSave, onCancel, onCancelWithWha
 }
 /* ── LOGIN FORM ─────────────────────────────────────────────────── */
 function LoginForm({ onLogin }) {
+  const [modo, setModo] = useState("login"); // "login" | "esqueci"
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro,  setErro]  = useState("");
   const [loading, setLoading] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [enviado, setEnviado] = useState(false);
 
   async function handleLogin() {
     setErro(""); setLoading(true);
@@ -287,7 +291,53 @@ function LoginForm({ onLogin }) {
     }
     setLoading(false);
   }
-  const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  async function handleEsqueciSenha() {
+    setErro(""); setLoading(true);
+    try {
+      await authFetch(`${API}/esqueci-senha`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setEnviado(true);
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+    }
+    setLoading(false);
+  }
+
+  if (modo === "esqueci") {
+    return (
+      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        {enviado ? (
+          <div style={{ fontSize:13, color:C.muted, lineHeight:1.6, textAlign:"center", padding:"12px 0" }}>
+            ✅ Se esse email estiver cadastrado, enviamos um link de recuperação. Verifique sua caixa de entrada (e o spam).
+          </div>
+        ) : (
+          <>
+            <div>
+              <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>EMAIL</div>
+              <Input value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" />
+            </div>
+            {erro && (
+              <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>
+                ⚠️ {erro}
+              </div>
+            )}
+            <Btn variant="primary" size="lg" onClick={handleEsqueciSenha} disabled={loading || !email} style={{ width:"100%", justifyContent:"center" }}>
+              {loading ? "Enviando…" : "Enviar link de recuperação"}
+            </Btn>
+          </>
+        )}
+        <button onClick={()=>{setModo("login");setEnviado(false);setErro("");}} style={{
+          background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer",
+          textDecoration:"underline", fontFamily:"inherit", alignSelf:"center",
+        }}>← Voltar para login</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -305,8 +355,11 @@ function LoginForm({ onLogin }) {
     background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
   }}>{mostrarSenha ? "🙈" : "👁️"}</button>
 </div>
-
       </div>
+      <button onClick={()=>{setModo("esqueci");setErro("");}} style={{
+        alignSelf:"flex-end", background:"none", border:"none", color:C.accent, fontSize:12,
+        cursor:"pointer", fontFamily:"inherit", padding:0,
+      }}>Esqueci minha senha</button>
       {erro && (
         <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
           borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>
@@ -1539,6 +1592,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/agendar" element={<Agendar />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/*" element={<AdminApp />} />
       </Routes>
     </BrowserRouter>
