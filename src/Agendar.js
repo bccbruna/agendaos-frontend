@@ -126,6 +126,11 @@ async function handleAgendar() {
   const service = services.find(s=>s.id===serviceId);
   const profissional = profissionais.find(p=>p.id===profissionalId);
   const today   = new Date().toISOString().split("T")[0];
+  const hasProfissionais = profissionais.length > 0;
+  const stepLabels = hasProfissionais
+    ? ["Seus dados","Serviço","Profissional","Horário"]
+    : ["Seus dados","Serviço","Horário"];
+  const displayStep = hasProfissionais ? step : (step===4 ? 3 : step);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
@@ -147,13 +152,13 @@ async function handleAgendar() {
         {/* Steps indicator */}
         {step < 5 && (
           <div style={{ display:"flex", gap:8, marginBottom:24 }}>
-            {["Seus dados","Serviço","Profissional","Horário"].map((s,i)=>(
+            {stepLabels.map((s,i)=>(
               <div key={s} style={{ flex:1, textAlign:"center" }}>
                 <div style={{
                   height:4, borderRadius:2, marginBottom:6,
-                  background: i+1<=step ? C.accent : "rgba(255,255,255,0.1)",
+                  background: i+1<=displayStep ? C.accent : "rgba(255,255,255,0.1)",
                 }}/>
-                <div style={{ fontSize:10, color: i+1<=step ? C.accent : C.dim }}>{s}</div>
+                <div style={{ fontSize:10, color: i+1<=displayStep ? C.accent : C.dim }}>{s}</div>
               </div>
             ))}
           </div>
@@ -210,7 +215,7 @@ async function handleAgendar() {
                 background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
                 color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
               }}>← Voltar</button>
-              <button onClick={()=>setStep(3)} disabled={!serviceId} style={{
+              <button onClick={()=>setStep(hasProfissionais ? 3 : 4)} disabled={!serviceId} style={{
                 flex:2, padding:"10px", borderRadius:10, cursor:serviceId?"pointer":"not-allowed",
                 background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
                 border:"none", color:"#fff", fontFamily:"inherit", fontWeight:700, fontSize:13,
@@ -306,7 +311,7 @@ async function handleAgendar() {
                   borderRadius:10, padding:"12px 14px", fontSize:12, color:C.muted }}>
                   📋 <strong style={{color:C.text}}>{service?.name}</strong> · {service?.duration}min ·{" "}
                   <strong style={{color:C.green}}>R$ {Number(service?.price||0).toFixed(2).replace(".",",")}</strong><br/>
-                  💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/>
+                  {hasProfissionais && <>💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/></>}
                   📅 {data.split("-").reverse().join("/")} às {String(hora).padStart(2,"0")}h<br/>
                   👤 {nome} · 📱 {telefone}
                 </div>
@@ -318,7 +323,7 @@ async function handleAgendar() {
               )}
 
               <div style={{ display:"flex", gap:10 }}>
-                <button onClick={()=>setStep(3)} style={{
+                <button onClick={()=>setStep(hasProfissionais ? 3 : 2)} style={{
                   flex:1, padding:"10px", borderRadius:10, cursor:"pointer",
                   background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
                   color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
@@ -349,7 +354,7 @@ async function handleAgendar() {
             <div style={{ background:`${C.accent}0D`, border:`1px solid ${C.accent}22`,
               borderRadius:10, padding:"14px", fontSize:13, color:C.muted, marginBottom:20 }}>
               📋 <strong style={{color:C.text}}>{service?.name}</strong><br/>
-              💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/>
+              {hasProfissionais && <>💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/></>}
               📅 {data.split("-").reverse().join("/")} às {String(hora).padStart(2,"0")}h
             </div>
             <button onClick={()=>{setStep(1);setNome("");setTelefone("");setServiceId(null);setProfissionalId(undefined);setData("");}} style={{
