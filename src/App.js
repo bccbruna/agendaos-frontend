@@ -292,7 +292,7 @@ function LoginForm({ onLogin }) {
       });
       const data = await res.json();
       if (data.ok) {
-        onLogin(email, data.primeiro_acesso, data.token);
+        onLogin(email, data.primeiro_acesso, data.token, data.slug);
       } else {
         setErro(data.erro || "Email ou senha incorretos");
       }
@@ -924,6 +924,9 @@ const isMobile = useIsMobile();
 const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "true");
 const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
 const [usuarioEmail, setUsuarioEmail] = useState(() => localStorage.getItem("email") || "");
+const [slug, setSlug] = useState(() => localStorage.getItem("slug") || "");
+const [linkCopiado, setLinkCopiado] = useState(false);
+const FRONTEND_URL = window.location.origin;
 const [menuOpen, setMenuOpen] = useState(false);  
 const [novoAgendamento, setNovoAgendamento] = useState(null);
 const ultimoIdRef = useRef(0);
@@ -962,7 +965,8 @@ useEffect(() => {
   const [clients,  setClients]  = useState(CLIENTS_INIT);
   const [services, setServices] = useState(SERVICES_INIT);
 useEffect(() => {
-  fetch(`${API}/servicos`)
+  if (!logado) return;
+  authFetch(`${API}/servicos`)
     .then(r => r.json())
     .then(data => {
       if (data.length > 0) {
@@ -977,11 +981,12 @@ useEffect(() => {
       }
     })
     .catch(() => console.log("Serviços: usando dados locais"));
-}, []);
+}, [logado]);
 
   const [profissionais, setProfissionais] = useState([]);
   useEffect(() => {
-    fetch(`${API}/profissionais`)
+    if (!logado) return;
+    authFetch(`${API}/profissionais`)
       .then(r => r.json())
       .then(data => setProfissionais(data.map(p => ({
         id: p.id,
@@ -989,7 +994,7 @@ useEffect(() => {
         especialidade: p.especialidade,
       }))))
       .catch(() => console.log("Profissionais: usando dados locais"));
-  }, []);
+  }, [logado]);
   // Modals
   const [aptModal,    setAptModal]    = useState(false);
   const [editApt,     setEditApt]     = useState(null);
@@ -1244,13 +1249,14 @@ onDelete={handleDeleteClient} />,
           </div>
 
             <LoginForm
-            onLogin={(email, primeiro, token) => {
+            onLogin={(email, primeiro, token, novoSlug) => {
               setLogado(true);
               setUsuarioEmail(email);
               setPrimeiroAcesso(primeiro);
               localStorage.setItem("logado", "true");
               localStorage.setItem("email", email);
               if (token) localStorage.setItem("token", token);
+              if (novoSlug) { setSlug(novoSlug); localStorage.setItem("slug", novoSlug); }
             }}
           />
         </div>
@@ -1448,19 +1454,35 @@ onDelete={handleDeleteClient} />,
                 {tab==="profissionais" && "Profissionais"}
               </h1>
             </div>
-            <div style={{ display:"flex",alignItems:"center",gap:8,padding:"7px 14px",
-              background:C.card,border:`1px solid ${C.border}`,borderRadius:20 }}>
-              <div style={{ width:7,height:7,borderRadius:"50%",background:C.green,animation:"pulse 2s infinite" }}/>
-              <span style={{ fontSize:10,color:C.dim }}>Sistema ativo</span>
-            <button onClick={()=>{setLogado(false);setPrimeiroAcesso(false);setUsuarioEmail("");
+            <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end" }}>
+              {slug && (
+                <button onClick={()=>{
+                  navigator.clipboard.writeText(`${FRONTEND_URL}/agendar/${slug}`);
+                  setLinkCopiado(true);
+                  setTimeout(()=>setLinkCopiado(false), 2000);
+                }} style={{
+                  display:"flex", alignItems:"center", gap:6, padding:"7px 14px",
+                  background:C.card, border:`1px solid ${C.accent}44`, borderRadius:20,
+                  color:C.accent, fontSize:10, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                }} title={`${FRONTEND_URL}/agendar/${slug}`}>
+                  🔗 {linkCopiado ? "Link copiado!" : "Copiar link de agendamento"}
+                </button>
+              )}
+              <div style={{ display:"flex",alignItems:"center",gap:8,padding:"7px 14px",
+                background:C.card,border:`1px solid ${C.border}`,borderRadius:20 }}>
+                <div style={{ width:7,height:7,borderRadius:"50%",background:C.green,animation:"pulse 2s infinite" }}/>
+                <span style={{ fontSize:10,color:C.dim }}>Sistema ativo</span>
+              <button onClick={()=>{setLogado(false);setPrimeiroAcesso(false);setUsuarioEmail("");setSlug("");
 localStorage.removeItem("logado");
-localStorage.removeItem("email");}} style={{
-              marginLeft:8, background:"rgba(239,68,68,0.15)",
-              border:"1px solid rgba(239,68,68,0.3)",
-              borderRadius:8, padding:"3px 8px",
-              fontSize:10, color:C.red, cursor:"pointer",
-              fontFamily:"inherit", fontWeight:700,
-            }}>Sair</button>
+localStorage.removeItem("email");
+localStorage.removeItem("slug");}} style={{
+                marginLeft:8, background:"rgba(239,68,68,0.15)",
+                border:"1px solid rgba(239,68,68,0.3)",
+                borderRadius:8, padding:"3px 8px",
+                fontSize:10, color:C.red, cursor:"pointer",
+                fontFamily:"inherit", fontWeight:700,
+              }}>Sair</button>
+              </div>
             </div>
           </div>
 
@@ -1717,6 +1739,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/agendar" element={<Agendar />} />
+        <Route path="/agendar/:slug" element={<Agendar />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/*" element={<AdminApp />} />
       </Routes>

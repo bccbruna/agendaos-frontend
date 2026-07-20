@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 const API = "https://agendaos-backend-production.up.railway.app";
 
@@ -38,7 +39,27 @@ function Btn({ children, onClick, disabled }) {
   );
 }
 
+function TelaMensagem({ emoji, titulo, texto }) {
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, display:"flex",
+      alignItems:"center", justifyContent:"center", fontFamily:"'DM Sans',sans-serif", padding:24 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:32, maxWidth:400, textAlign:"center" }}>
+        <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
+        <div style={{ fontWeight:800, fontSize:17, marginBottom:8 }}>{titulo}</div>
+        <div style={{ fontSize:13, color:C.muted, lineHeight:1.6 }}>{texto}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Agendar() {
+  const { slug } = useParams();
+  const [donoId, setDonoId] = useState(null);
+  const [nomeNegocio, setNomeNegocio] = useState("");
+  const [carregandoNegocio, setCarregandoNegocio] = useState(true);
+  const [negocioNaoEncontrado, setNegocioNaoEncontrado] = useState(false);
+
   const [services,  setServices]  = useState([]);
   const [profissionais, setProfissionais] = useState([]);
   const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=profissional, 4=horário, 5=confirmado
@@ -55,47 +76,58 @@ export default function Agendar() {
   const HOURS = Array.from({length:11},(_,i)=>i+8);
 
   useEffect(() => {
-  fetch(`${API}/servicos`)
-    .then(r=>r.json())
-    .then(data => setServices(data.map(s => ({
-      id: s.id,
-      name: s.nome,
-      duration: s.duracao,
-      price: s.preco,
-    }))))
-    .catch(()=>{});
-}, []);
+    if (!slug) { setCarregandoNegocio(false); return; }
+    fetch(`${API}/negocio/${slug}`)
+      .then(r => { if (!r.ok) throw new Error("nao encontrado"); return r.json(); })
+      .then(neg => { setDonoId(neg.id); setNomeNegocio(neg.nome_negocio); })
+      .catch(() => setNegocioNaoEncontrado(true))
+      .finally(() => setCarregandoNegocio(false));
+  }, [slug]);
 
-useEffect(() => {
-  fetch(`${API}/profissionais`)
-    .then(r=>r.json())
-    .then(data => setProfissionais(data.map(p => ({
-      id: p.id,
-      name: p.nome,
-      especialidade: p.especialidade,
-    }))))
-    .catch(()=>{});
-}, []);
+  useEffect(() => {
+    if (!donoId) return;
+    fetch(`${API}/servicos?dono_id=${donoId}`)
+      .then(r=>r.json())
+      .then(data => setServices(data.map(s => ({
+        id: s.id,
+        name: s.nome,
+        duration: s.duracao,
+        price: s.preco,
+      }))))
+      .catch(()=>{});
+  }, [donoId]);
 
-useEffect(() => {
-  if (!data || !serviceId) return;
-  const profParam = (profissionalId && profissionalId !== "any") ? `&profissional_id=${profissionalId}` : "";
-  fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}${profParam}`)
-    .then(r => r.json())
-    .then(horarios => setHorariosDisponiveis(horarios))
-    .catch(() => setHorariosDisponiveis([]));
-}, [data, serviceId, profissionalId]);
+  useEffect(() => {
+    if (!donoId) return;
+    fetch(`${API}/profissionais?dono_id=${donoId}`)
+      .then(r=>r.json())
+      .then(data => setProfissionais(data.map(p => ({
+        id: p.id,
+        name: p.nome,
+        especialidade: p.especialidade,
+      }))))
+      .catch(()=>{});
+  }, [donoId]);
 
-async function handleAgendar() {
+  useEffect(() => {
+    if (!data || !serviceId || !donoId) return;
+    const profParam = (profissionalId && profissionalId !== "any") ? `&profissional_id=${profissionalId}` : "";
+    fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}&dono_id=${donoId}${profParam}`)
+      .then(r => r.json())
+      .then(horarios => setHorariosDisponiveis(horarios))
+      .catch(() => setHorariosDisponiveis([]));
+  }, [data, serviceId, profissionalId, donoId]);
+
+  async function handleAgendar() {
     setErro(""); setLoading(true);
     try {
       // Verifica se cliente já existe pelo telefone
-      const buscaRes = await fetch(`${API}/clientes/buscar?telefone=${telefone}`);
+      const buscaRes = await fetch(`${API}/clientes/buscar?telefone=${telefone}&dono_id=${donoId}`);
       let cliente = await buscaRes.json();
 
       // Se não existe, cria novo cliente
       if (!cliente || !cliente.id) {
-        const clienteRes = await fetch(`${API}/clientes`, {
+        const clienteRes = await fetch(`${API}/clientes?dono_id=${donoId}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ nome, telefone, email:"", tipo:"cliente" }),
         });
@@ -103,7 +135,7 @@ async function handleAgendar() {
       }
 
       const service = services.find(s=>s.id===serviceId);
-      await fetch(`${API}/agendamentos`, {
+      await fetch(`${API}/agendamentos?dono_id=${donoId}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           cliente_id: cliente.id,
@@ -132,6 +164,24 @@ async function handleAgendar() {
     : ["Seus dados","Serviço","Horário"];
   const displayStep = hasProfissionais ? step : (step===4 ? 3 : step);
 
+  if (carregandoNegocio) {
+    return <TelaMensagem emoji="⏳" titulo="Carregando…" texto="Só um instante." />;
+  }
+
+  if (!slug) {
+    return (
+      <TelaMensagem emoji="🔗" titulo="Link incompleto"
+        texto="Peça para o profissional te enviar o link de agendamento da barbearia/salão (ele termina com /agendar/nome-do-negocio)." />
+    );
+  }
+
+  if (negocioNaoEncontrado) {
+    return (
+      <TelaMensagem emoji="🤷" titulo="Negócio não encontrado"
+        texto="Esse link de agendamento não existe ou foi removido. Confira o link com o profissional." />
+    );
+  }
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
       fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
@@ -143,7 +193,7 @@ async function handleAgendar() {
           Agenda<span style={{color:C.accent}}>OS</span>
         </div>
         <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>
-          Agende seu horário de forma rápida e fácil
+          {nomeNegocio ? `Agende seu horário com ${nomeNegocio}` : "Agende seu horário de forma rápida e fácil"}
         </div>
       </div>
 
