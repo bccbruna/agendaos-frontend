@@ -61,6 +61,7 @@ export default function Agendar() {
   const [horarioFechamento, setHorarioFechamento] = useState("18:00");
   const [carregandoNegocio, setCarregandoNegocio] = useState(true);
   const [negocioNaoEncontrado, setNegocioNaoEncontrado] = useState(false);
+  const [negocioIndisponivel, setNegocioIndisponivel] = useState(false);
 
   const [services,  setServices]  = useState([]);
   const [profissionais, setProfissionais] = useState([]);
@@ -93,6 +94,7 @@ export default function Agendar() {
         setNomeNegocio(neg.nome_negocio);
         if (neg.horario_abertura) setHorarioAbertura(neg.horario_abertura);
         if (neg.horario_fechamento) setHorarioFechamento(neg.horario_fechamento);
+        if (neg.aceita_agendamentos === false) setNegocioIndisponivel(true);
       })
       .catch(() => setNegocioNaoEncontrado(true))
       .finally(() => setCarregandoNegocio(false));
@@ -145,11 +147,16 @@ export default function Agendar() {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ nome, telefone, email, tipo:"cliente" }),
         });
+        if (clienteRes.status === 402) {
+          setErro("Este negócio não está aceitando novos agendamentos no momento.");
+          setLoading(false);
+          return;
+        }
         cliente = await clienteRes.json();
       }
 
       const service = services.find(s=>s.id===serviceId);
-      await fetch(`${API}/agendamentos?dono_id=${donoId}`, {
+      const agendamentoRes = await fetch(`${API}/agendamentos?dono_id=${donoId}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           cliente_id: cliente.id,
@@ -162,6 +169,11 @@ export default function Agendar() {
           preco:      service?.price || 0,
         }),
       });
+      if (agendamentoRes.status === 402) {
+        setErro("Este negócio não está aceitando novos agendamentos no momento.");
+        setLoading(false);
+        return;
+      }
       setStep(5);
     } catch {
       setErro("Erro ao agendar. Tente novamente.");
@@ -193,6 +205,13 @@ export default function Agendar() {
     return (
       <TelaMensagem emoji="🤷" titulo="Negócio não encontrado"
         texto="Esse link de agendamento não existe ou foi removido. Confira o link com o profissional." />
+    );
+  }
+
+  if (negocioIndisponivel) {
+    return (
+      <TelaMensagem emoji="⏸️" titulo="Agendamentos temporariamente indisponíveis"
+        texto={`${nomeNegocio || "Este negócio"} não está aceitando novos agendamentos online no momento. Entre em contato diretamente para marcar seu horário.`} />
     );
   }
 

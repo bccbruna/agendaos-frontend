@@ -993,6 +993,7 @@ const TABS = [
   { id:"services",      icon:"✨", label:"Serviços"      },
   { id:"profissionais", icon:"💈", label:"Profissionais" },
   { id:"configuracoes", icon:"⚙️", label:"Configurações" },
+  { id:"assinatura",    icon:"💳", label:"Assinatura"    },
 ];
 
 const DIAS_SEMANA_OPCOES = [
@@ -1101,6 +1102,84 @@ function Configuracoes() {
   );
 }
 
+/* ── ASSINATURA ──────────────────────────────────────────────── */
+function Assinatura() {
+  const [dados, setDados] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [redirecionando, setRedirecionando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    authFetch(`${API}/assinatura`)
+      .then(r => r.json())
+      .then(setDados)
+      .catch(() => setErro("Erro ao carregar dados da assinatura."))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  async function assinar() {
+    setErro(""); setRedirecionando(true);
+    try {
+      const res = await authFetch(`${API}/assinatura/checkout`, { method: "POST" });
+      const data = await res.json();
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        setErro("Não foi possível iniciar o pagamento. Tente novamente.");
+        setRedirecionando(false);
+      }
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+      setRedirecionando(false);
+    }
+  }
+
+  if (carregando) return <div style={{ fontSize:13, color:C.dim }}>Carregando…</div>;
+
+  const preco = dados?.preco_mensal ?? 79.90;
+  const precoFmt = `R$ ${Number(preco).toFixed(2).replace(".", ",")}`;
+
+  return (
+    <Card style={{ maxWidth:480 }}>
+      <div style={{ fontWeight:800, fontSize:16, marginBottom:20 }}>Sua Assinatura</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        {dados?.status === "ativa" && (
+          <div style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.3)",
+            borderRadius:10, padding:"14px 16px", fontSize:13, color:C.text }}>
+            ✅ Assinatura ativa — {precoFmt}/mês
+          </div>
+        )}
+        {dados?.status === "trial" && dados.ativa && (
+          <div style={{
+            background: dados.dias_restantes <= 3 ? "rgba(245,158,11,0.1)" : "rgba(168,85,247,0.08)",
+            border: `1px solid ${dados.dias_restantes <= 3 ? "rgba(245,158,11,0.3)" : "rgba(168,85,247,0.2)"}`,
+            borderRadius:10, padding:"14px 16px", fontSize:13, color:C.text }}>
+            ⏳ Teste grátis: {dados.dias_restantes} dia(s) restante(s)
+          </div>
+        )}
+        {!dados?.ativa && (
+          <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+            borderRadius:10, padding:"14px 16px", fontSize:13, color:C.text }}>
+            ⚠️ {dados?.status === "trial" ? "Seu teste grátis terminou" : "Assinatura expirada"} — novos agendamentos/clientes/serviços estão bloqueados até assinar.
+          </div>
+        )}
+        <div style={{ fontSize:13, color:C.muted, lineHeight:1.6 }}>
+          Plano único AgendaOS: <strong style={{color:C.text}}>{precoFmt}/mês</strong>, cobrança recorrente via Mercado Pago.
+        </div>
+        {erro && (
+          <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+            borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>⚠️ {erro}</div>
+        )}
+        {dados?.status !== "ativa" && (
+          <Btn variant="primary" onClick={assinar} disabled={redirecionando}>
+            {redirecionando ? "Redirecionando…" : "Assinar agora"}
+          </Btn>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function AdminApp() {
 const isMobile = useIsMobile();
 const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "true");
@@ -1176,6 +1255,15 @@ useEffect(() => {
         especialidade: p.especialidade,
       }))))
       .catch(() => console.log("Profissionais: usando dados locais"));
+  }, [logado]);
+
+  const [assinatura, setAssinatura] = useState(null);
+  useEffect(() => {
+    if (!logado) return;
+    authFetch(`${API}/assinatura`)
+      .then(r => r.json())
+      .then(setAssinatura)
+      .catch(() => {});
   }, [logado]);
   // Modals
   const [aptModal,    setAptModal]    = useState(false);
@@ -1258,6 +1346,11 @@ if (conflito) {
             preco:      service?.price || 0,
           }),
         });
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({}));
+          alert(err.detail || "Erro ao salvar agendamento.");
+          return;
+        }
         const saved = await res.json();
         setApts(as=>[...as,{
           id:        saved.id,
@@ -1291,6 +1384,11 @@ if (conflito) {
             tipo:     form.biz   || "salon",
           }),
         });
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({}));
+          alert(err.detail || "Erro ao salvar cliente.");
+          return;
+        }
         const saved = await res.json();
         setClients(cs=>[...cs, {
           id:        saved.id,
@@ -1404,6 +1502,7 @@ onDelete={handleDeleteClient} />,
       }}
       onAdd={()=>{setEditProfissional({name:"",especialidade:""});setProfissionalModal(true)}} />,
    configuracoes: <Configuracoes />,
+   assinatura: <Assinatura />,
   };
 // ── Tela de Login ─────────────────────────────────────────
   if (!logado) {
@@ -1636,9 +1735,23 @@ onDelete={handleDeleteClient} />,
                 {tab==="services"  && "Serviços Oferecidos"}
                 {tab==="profissionais" && "Profissionais"}
                 {tab==="configuracoes" && "Configurações"}
+                {tab==="assinatura" && "Assinatura"}
               </h1>
             </div>
             <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end" }}>
+              {assinatura && assinatura.status !== "ativa" && (
+                <button onClick={()=>setTab("assinatura")} style={{
+                  display:"flex", alignItems:"center", gap:6, padding:"7px 14px",
+                  background: !assinatura.ativa ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)",
+                  border:`1px solid ${!assinatura.ativa ? "rgba(239,68,68,0.35)" : "rgba(245,158,11,0.35)"}`,
+                  borderRadius:20, color: !assinatura.ativa ? C.red : C.yellow,
+                  fontSize:10, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                }}>
+                  {!assinatura.ativa
+                    ? "⚠️ Assinatura expirada"
+                    : `⏳ Teste grátis: ${assinatura.dias_restantes ?? 0} dia(s)`}
+                </button>
+              )}
               {slug && (
                 <button onClick={()=>{
                   navigator.clipboard.writeText(`${FRONTEND_URL}/agendar/${slug}`);
@@ -1796,7 +1909,7 @@ localStorage.removeItem("slug");}} style={{
         <Btn variant="primary" onClick={async ()=>{
           try {
   if (editService.id && services.find(s => s.id === editService.id)) {
-    await authFetch(`${API}/servicos/${editService.id}`, {
+    const res = await authFetch(`${API}/servicos/${editService.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1806,6 +1919,7 @@ localStorage.removeItem("slug");}} style={{
         categoria: editService.biz || "barber",
       }),
     });
+    if (!res.ok) { const err = await res.json().catch(()=>({})); alert(err.detail || "Erro ao salvar serviço."); return; }
     setServices(ss => ss.map(s => s.id === editService.id ? editService : s));
   } else {
     const res = await authFetch(`${API}/servicos`, {
@@ -1818,6 +1932,7 @@ localStorage.removeItem("slug");}} style={{
         categoria: editService.biz || "barber",
       }),
     });
+    if (!res.ok) { const err = await res.json().catch(()=>({})); alert(err.detail || "Erro ao salvar serviço."); return; }
     const saved = await res.json();
     setServices(ss => [...ss, { ...editService, id: saved.id }]);
   }
