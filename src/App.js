@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Agendar from "./Agendar";
 import RedefinirSenha from "./RedefinirSenha";
+import PoliticaPrivacidade from "./PoliticaPrivacidade";
 const API = "https://agendaos-backend-production.up.railway.app";
 const authFetch = (url, options = {}) => {
   const token = localStorage.getItem("token");
@@ -1741,6 +1742,7 @@ export default function App() {
         <Route path="/agendar" element={<Agendar />} />
         <Route path="/agendar/:slug" element={<Agendar />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+        <Route path="/privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/*" element={<AdminApp />} />
       </Routes>
     </BrowserRouter>

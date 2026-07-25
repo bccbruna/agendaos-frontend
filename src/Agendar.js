@@ -65,6 +65,7 @@ export default function Agendar() {
   const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=profissional, 4=horário, 5=confirmado
   const [nome,      setNome]      = useState("");
   const [telefone,  setTelefone]  = useState("");
+  const [aceitouPrivacidade, setAceitouPrivacidade] = useState(false);
   const [serviceId, setServiceId] = useState(null);
   const [profissionalId, setProfissionalId] = useState(undefined); // undefined=nao escolheu, "any"=sem preferencia, ou id
   const [data,      setData]      = useState("");
@@ -229,7 +230,18 @@ export default function Agendar() {
                   onChange={e=>setTelefone(e.target.value.replace(/\D/g,"").slice(0,11))}
                   placeholder="(11) 99999-9999" />
               </div>
-              <Btn onClick={()=>setStep(2)} disabled={!nome||telefone.length<10}>
+              <label style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:12, color:C.muted, cursor:"pointer" }}>
+                <input type="checkbox" checked={aceitouPrivacidade}
+                  onChange={e=>setAceitouPrivacidade(e.target.checked)}
+                  style={{ marginTop:2, cursor:"pointer" }} />
+                <span>
+                  Li e concordo com a{" "}
+                  <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color:C.accent }}>
+                    política de privacidade
+                  </a>
+                </span>
+              </label>
+              <Btn onClick={()=>setStep(2)} disabled={!nome||telefone.length<10||!aceitouPrivacidade}>
                 Próximo →
               </Btn>
             </div>
