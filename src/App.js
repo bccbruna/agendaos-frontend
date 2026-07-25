@@ -992,7 +992,114 @@ const TABS = [
   { id:"clients",       icon:"👥", label:"Clientes"      },
   { id:"services",      icon:"✨", label:"Serviços"      },
   { id:"profissionais", icon:"💈", label:"Profissionais" },
+  { id:"configuracoes", icon:"⚙️", label:"Configurações" },
 ];
+
+const DIAS_SEMANA_OPCOES = [
+  { valor:"1", label:"Seg" },
+  { valor:"2", label:"Ter" },
+  { valor:"3", label:"Qua" },
+  { valor:"4", label:"Qui" },
+  { valor:"5", label:"Sex" },
+  { valor:"6", label:"Sáb" },
+  { valor:"0", label:"Dom" },
+];
+
+/* ── CONFIGURAÇÕES (horário de funcionamento) ───────────────────── */
+function Configuracoes() {
+  const [horarioAbertura, setHorarioAbertura] = useState("08:00");
+  const [horarioFechamento, setHorarioFechamento] = useState("18:00");
+  const [diasFuncionamento, setDiasFuncionamento] = useState(["1","2","3","4","5","6"]);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState(false);
+
+  useEffect(() => {
+    authFetch(`${API}/configuracoes`)
+      .then(r => r.json())
+      .then(data => {
+        setHorarioAbertura(data.horario_abertura);
+        setHorarioFechamento(data.horario_fechamento);
+        setDiasFuncionamento(data.dias_funcionamento.split(","));
+      })
+      .catch(() => {})
+      .finally(() => setCarregando(false));
+  }, []);
+
+  function toggleDia(valor) {
+    setDiasFuncionamento(ds => ds.includes(valor) ? ds.filter(d=>d!==valor) : [...ds, valor]);
+  }
+
+  async function salvar() {
+    setErro(""); setSucesso(false); setSalvando(true);
+    try {
+      const res = await authFetch(`${API}/configuracoes`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          horario_abertura: horarioAbertura,
+          horario_fechamento: horarioFechamento,
+          dias_funcionamento: diasFuncionamento.join(","),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) { setSucesso(true); setTimeout(()=>setSucesso(false), 2500); }
+      else { setErro(data.erro || "Erro ao salvar."); }
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+    }
+    setSalvando(false);
+  }
+
+  if (carregando) return <div style={{ fontSize:13, color:C.dim }}>Carregando…</div>;
+
+  return (
+    <Card style={{ maxWidth:480 }}>
+      <div style={{ fontWeight:800, fontSize:16, marginBottom:20 }}>Horário de Funcionamento</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div>
+            <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>ABRE ÀS</div>
+            <Input type="time" value={horarioAbertura} onChange={e=>setHorarioAbertura(e.target.value)} />
+          </div>
+          <div>
+            <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>FECHA ÀS</div>
+            <Input type="time" value={horarioFechamento} onChange={e=>setHorarioFechamento(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>DIAS DE FUNCIONAMENTO</div>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {DIAS_SEMANA_OPCOES.map(d=>{
+              const ativo = diasFuncionamento.includes(d.valor);
+              return (
+                <button key={d.valor} onClick={()=>toggleDia(d.valor)} style={{
+                  padding:"8px 12px", borderRadius:10, cursor:"pointer", fontFamily:"inherit",
+                  fontSize:12, fontWeight:700,
+                  background: ativo ? `${C.accent}20` : "rgba(255,255,255,0.04)",
+                  border:`1px solid ${ativo ? C.accent+"55" : C.border}`,
+                  color: ativo ? C.accent : C.muted,
+                }}>{d.label}</button>
+              );
+            })}
+          </div>
+        </div>
+        {erro && (
+          <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+            borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>⚠️ {erro}</div>
+        )}
+        {sucesso && (
+          <div style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.3)",
+            borderRadius:10, padding:"10px 14px", fontSize:12, color:C.green }}>✅ Salvo com sucesso!</div>
+        )}
+        <Btn variant="primary" onClick={salvar} disabled={salvando || diasFuncionamento.length===0}>
+          {salvando ? "Salvando…" : "Salvar horário"}
+        </Btn>
+      </div>
+    </Card>
+  );
+}
 
 function AdminApp() {
 const isMobile = useIsMobile();
@@ -1296,6 +1403,7 @@ onDelete={handleDeleteClient} />,
         }
       }}
       onAdd={()=>{setEditProfissional({name:"",especialidade:""});setProfissionalModal(true)}} />,
+   configuracoes: <Configuracoes />,
   };
 // ── Tela de Login ─────────────────────────────────────────
   if (!logado) {
@@ -1527,6 +1635,7 @@ onDelete={handleDeleteClient} />,
                 {tab==="clients"   && "Meus Clientes"}
                 {tab==="services"  && "Serviços Oferecidos"}
                 {tab==="profissionais" && "Profissionais"}
+                {tab==="configuracoes" && "Configurações"}
               </h1>
             </div>
             <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end" }}>

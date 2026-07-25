@@ -57,6 +57,8 @@ export default function Agendar() {
   const { slug } = useParams();
   const [donoId, setDonoId] = useState(null);
   const [nomeNegocio, setNomeNegocio] = useState("");
+  const [horarioAbertura, setHorarioAbertura] = useState("08:00");
+  const [horarioFechamento, setHorarioFechamento] = useState("18:00");
   const [carregandoNegocio, setCarregandoNegocio] = useState(true);
   const [negocioNaoEncontrado, setNegocioNaoEncontrado] = useState(false);
 
@@ -74,13 +76,23 @@ export default function Agendar() {
   const [erro,      setErro]      = useState("");
   const [horariosDisponiveis, setHorariosDisponiveis] = useState([]);
 
-  const HOURS = Array.from({length:11},(_,i)=>i+8);
+  const horaAberturaInt = parseInt(horarioAbertura.split(":")[0]);
+  const horaFechamentoInt = parseInt(horarioFechamento.split(":")[0]);
+  const HOURS = Array.from(
+    { length: Math.max(horaFechamentoInt - horaAberturaInt + 1, 1) },
+    (_, i) => horaAberturaInt + i
+  );
 
   useEffect(() => {
     if (!slug) { setCarregandoNegocio(false); return; }
     fetch(`${API}/negocio/${slug}`)
       .then(r => { if (!r.ok) throw new Error("nao encontrado"); return r.json(); })
-      .then(neg => { setDonoId(neg.id); setNomeNegocio(neg.nome_negocio); })
+      .then(neg => {
+        setDonoId(neg.id);
+        setNomeNegocio(neg.nome_negocio);
+        if (neg.horario_abertura) setHorarioAbertura(neg.horario_abertura);
+        if (neg.horario_fechamento) setHorarioFechamento(neg.horario_fechamento);
+      })
       .catch(() => setNegocioNaoEncontrado(true))
       .finally(() => setCarregandoNegocio(false));
   }, [slug]);
@@ -345,6 +357,11 @@ export default function Agendar() {
               </div>
               <div>
                 <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>HORÁRIO</div>
+                {data && horariosDisponiveis.length===0 ? (
+                  <div style={{ fontSize:12, color:C.dim, textAlign:"center", padding:"16px 0" }}>
+                    Nenhum horário disponível nessa data (fechado ou lotado). Tente outro dia.
+                  </div>
+                ) : (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
                   {HOURS.map(h=>{
   const slot = `${String(h).padStart(2,"0")}:00`;
@@ -365,6 +382,7 @@ export default function Agendar() {
   );
 })}
                 </div>
+                )}
               </div>
 
               {/* Resumo */}
