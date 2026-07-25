@@ -67,6 +67,7 @@ export default function Agendar() {
   const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=profissional, 4=horário, 5=confirmado
   const [nome,      setNome]      = useState("");
   const [telefone,  setTelefone]  = useState("");
+  const [email,     setEmail]     = useState("");
   const [aceitouPrivacidade, setAceitouPrivacidade] = useState(false);
   const [serviceId, setServiceId] = useState(null);
   const [profissionalId, setProfissionalId] = useState(undefined); // undefined=nao escolheu, "any"=sem preferencia, ou id
@@ -142,7 +143,7 @@ export default function Agendar() {
       if (!cliente || !cliente.id) {
         const clienteRes = await fetch(`${API}/clientes?dono_id=${donoId}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ nome, telefone, email:"", tipo:"cliente" }),
+          body: JSON.stringify({ nome, telefone, email, tipo:"cliente" }),
         });
         cliente = await clienteRes.json();
       }
@@ -241,6 +242,11 @@ export default function Agendar() {
                 <Input value={telefone}
                   onChange={e=>setTelefone(e.target.value.replace(/\D/g,"").slice(0,11))}
                   placeholder="(11) 99999-9999" />
+              </div>
+              <div>
+                <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>E-MAIL (OPCIONAL)</div>
+                <Input value={email} onChange={e=>setEmail(e.target.value)}
+                  placeholder="Para receber a confirmação por e-mail" type="email" />
               </div>
               <label style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:12, color:C.muted, cursor:"pointer" }}>
                 <input type="checkbox" checked={aceitouPrivacidade}
@@ -437,7 +443,7 @@ export default function Agendar() {
               {hasProfissionais && <>💈 {profissionalId==="any" ? "Sem preferência" : (profissional?.name || "—")}<br/></>}
               📅 {data.split("-").reverse().join("/")} às {String(hora).padStart(2,"0")}h
             </div>
-            <button onClick={()=>{setStep(1);setNome("");setTelefone("");setServiceId(null);setProfissionalId(undefined);setData("");}} style={{
+            <button onClick={()=>{setStep(1);setNome("");setTelefone("");setEmail("");setServiceId(null);setProfissionalId(undefined);setData("");}} style={{
               padding:"10px 24px", borderRadius:10, cursor:"pointer",
               background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
               color:C.muted, fontFamily:"inherit", fontWeight:700, fontSize:13,
