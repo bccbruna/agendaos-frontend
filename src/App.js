@@ -275,13 +275,15 @@ function AptForm({ initial, clients, services, profissionais, onSave, onCancel, 
 }
 /* ── LOGIN FORM ─────────────────────────────────────────────────── */
 function LoginForm({ onLogin }) {
-  const [modo, setModo] = useState("login"); // "login" | "esqueci"
+  const [modo, setModo] = useState("login"); // "login" | "esqueci" | "cadastro"
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro,  setErro]  = useState("");
   const [loading, setLoading] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [nomeNegocio, setNomeNegocio] = useState("");
+  const [senhaConfirm, setSenhaConfirm] = useState("");
 
   async function handleLogin() {
     setErro(""); setLoading(true);
@@ -312,6 +314,29 @@ function LoginForm({ onLogin }) {
         body: JSON.stringify({ email }),
       });
       setEnviado(true);
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+    }
+    setLoading(false);
+  }
+
+  async function handleCadastro() {
+    setErro("");
+    if (senha.length < 6) { setErro("A senha deve ter pelo menos 6 caracteres."); return; }
+    if (senha !== senhaConfirm) { setErro("As senhas não coincidem."); return; }
+    setLoading(true);
+    try {
+      const res = await authFetch(`${API}/usuarios`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome_negocio: nomeNegocio, email, senha }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        onLogin(data.email, data.primeiro_acesso, data.token, data.slug);
+      } else {
+        setErro(data.erro || "Erro ao criar conta.");
+      }
     } catch {
       setErro("Erro ao conectar com o servidor.");
     }
@@ -350,6 +375,48 @@ function LoginForm({ onLogin }) {
     );
   }
 
+  if (modo === "cadastro") {
+    return (
+      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>NOME DO NEGÓCIO</div>
+          <Input value={nomeNegocio} onChange={e=>setNomeNegocio(e.target.value)} placeholder="ex: Barbearia do João" />
+        </div>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>EMAIL</div>
+          <Input value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" />
+        </div>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>SENHA</div>
+          <Input type={mostrarSenha ? "text" : "password"} value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Mínimo 6 caracteres" />
+        </div>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>CONFIRMAR SENHA</div>
+          <div style={{ position:"relative" }}>
+            <Input type={mostrarSenha ? "text" : "password"} value={senhaConfirm} onChange={e=>setSenhaConfirm(e.target.value)} placeholder="Repita a senha" />
+            <button onClick={()=>setMostrarSenha(m=>!m)} style={{
+              position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+              background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:16,
+            }}>{mostrarSenha ? "🙈" : "👁️"}</button>
+          </div>
+        </div>
+        {erro && (
+          <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+            borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>
+            ⚠️ {erro}
+          </div>
+        )}
+        <Btn variant="primary" size="lg" onClick={handleCadastro} disabled={loading || !nomeNegocio || !email || !senha} style={{ width:"100%", justifyContent:"center" }}>
+          {loading ? "Criando conta…" : "Criar conta grátis"}
+        </Btn>
+        <button onClick={()=>{setModo("login");setErro("");}} style={{
+          background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer",
+          textDecoration:"underline", fontFamily:"inherit", alignSelf:"center",
+        }}>← Voltar para login</button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
       <div>
@@ -380,6 +447,13 @@ function LoginForm({ onLogin }) {
       <Btn variant="primary" size="lg" onClick={handleLogin} disabled={loading} style={{ width:"100%", justifyContent:"center" }}>
         {loading ? "Entrando…" : "Entrar"}
       </Btn>
+      <div style={{ textAlign:"center", fontSize:12, color:C.muted }}>
+        Não tem conta?{" "}
+        <button onClick={()=>{setModo("cadastro");setErro("");}} style={{
+          background:"none", border:"none", color:C.accent, cursor:"pointer",
+          fontFamily:"inherit", fontSize:12, padding:0, textDecoration:"underline",
+        }}>Criar conta grátis</button>
+      </div>
     </div>
   );
 }
