@@ -1107,14 +1107,18 @@ function Assinatura() {
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [redirecionando, setRedirecionando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
   const [erro, setErro] = useState("");
 
-  useEffect(() => {
-    authFetch(`${API}/assinatura`)
+  function carregarAssinatura() {
+    return authFetch(`${API}/assinatura`)
       .then(r => r.json())
       .then(setDados)
-      .catch(() => setErro("Erro ao carregar dados da assinatura."))
-      .finally(() => setCarregando(false));
+      .catch(() => setErro("Erro ao carregar dados da assinatura."));
+  }
+
+  useEffect(() => {
+    carregarAssinatura().finally(() => setCarregando(false));
   }, []);
 
   async function assinar() {
@@ -1132,6 +1136,23 @@ function Assinatura() {
       setErro("Erro ao conectar com o servidor.");
       setRedirecionando(false);
     }
+  }
+
+  async function cancelar() {
+    if (!window.confirm("Tem certeza que quer cancelar sua assinatura? Você perde o acesso a novos agendamentos/clientes/serviços assim que cancelar.")) return;
+    setErro(""); setCancelando(true);
+    try {
+      const res = await authFetch(`${API}/assinatura/cancelar`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        setErro(err.detail || "Erro ao cancelar assinatura.");
+      } else {
+        await carregarAssinatura();
+      }
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+    }
+    setCancelando(false);
   }
 
   if (carregando) return <div style={{ fontSize:13, color:C.dim }}>Carregando…</div>;
@@ -1174,6 +1195,15 @@ function Assinatura() {
           <Btn variant="primary" onClick={assinar} disabled={redirecionando}>
             {redirecionando ? "Redirecionando…" : "Assinar agora"}
           </Btn>
+        )}
+        {dados?.status === "ativa" && (
+          <button onClick={cancelar} disabled={cancelando} style={{
+            background:"transparent", border:`1px solid rgba(239,68,68,0.35)`, borderRadius:10,
+            color:C.red, fontSize:12, fontWeight:700, padding:"10px 16px",
+            cursor: cancelando ? "not-allowed" : "pointer", fontFamily:"inherit", opacity: cancelando ? 0.6 : 1,
+          }}>
+            {cancelando ? "Cancelando…" : "Cancelar assinatura"}
+          </button>
         )}
       </div>
     </Card>
