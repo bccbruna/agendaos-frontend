@@ -153,6 +153,15 @@ export default function Agendar() {
           return;
         }
         cliente = await clienteRes.json();
+      } else if (cliente.nome !== nome || (email && cliente.email !== email)) {
+        // Cliente já existia (mesmo telefone) mas com nome/e-mail diferentes do que acabou de digitar - atualiza
+        const updateRes = await fetch(`${API}/clientes/${cliente.id}?slug=${slug}`, {
+          method:"PUT", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ nome, telefone, email: email || cliente.email || "", tipo: cliente.tipo || "cliente" }),
+        });
+        if (updateRes.ok) {
+          cliente = await updateRes.json();
+        }
       }
 
       const service = services.find(s=>s.id===serviceId);
