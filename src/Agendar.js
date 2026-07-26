@@ -174,6 +174,11 @@ export default function Agendar() {
         setLoading(false);
         return;
       }
+      if (agendamentoRes.status === 409) {
+        setErro("Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.");
+        setLoading(false);
+        return;
+      }
       setStep(5);
     } catch {
       setErro("Erro ao agendar. Tente novamente.");
