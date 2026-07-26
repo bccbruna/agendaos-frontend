@@ -102,7 +102,7 @@ export default function Agendar() {
 
   useEffect(() => {
     if (!donoId) return;
-    fetch(`${API}/servicos?dono_id=${donoId}`)
+    fetch(`${API}/servicos?slug=${slug}`)
       .then(r=>r.json())
       .then(data => setServices(data.map(s => ({
         id: s.id,
@@ -115,7 +115,7 @@ export default function Agendar() {
 
   useEffect(() => {
     if (!donoId) return;
-    fetch(`${API}/profissionais?dono_id=${donoId}`)
+    fetch(`${API}/profissionais?slug=${slug}`)
       .then(r=>r.json())
       .then(data => setProfissionais(data.map(p => ({
         id: p.id,
@@ -128,7 +128,7 @@ export default function Agendar() {
   useEffect(() => {
     if (!data || !serviceId || !donoId) return;
     const profParam = (profissionalId && profissionalId !== "any") ? `&profissional_id=${profissionalId}` : "";
-    fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}&dono_id=${donoId}${profParam}`)
+    fetch(`${API}/horarios-disponiveis?data=${data}&servico_id=${serviceId}&slug=${slug}${profParam}`)
       .then(r => r.json())
       .then(horarios => setHorariosDisponiveis(horarios))
       .catch(() => setHorariosDisponiveis([]));
@@ -138,12 +138,12 @@ export default function Agendar() {
     setErro(""); setLoading(true);
     try {
       // Verifica se cliente já existe pelo telefone
-      const buscaRes = await fetch(`${API}/clientes/buscar?telefone=${telefone}&dono_id=${donoId}`);
+      const buscaRes = await fetch(`${API}/clientes/buscar?telefone=${telefone}&slug=${slug}`);
       let cliente = await buscaRes.json();
 
       // Se não existe, cria novo cliente
       if (!cliente || !cliente.id) {
-        const clienteRes = await fetch(`${API}/clientes?dono_id=${donoId}`, {
+        const clienteRes = await fetch(`${API}/clientes?slug=${slug}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ nome, telefone, email, tipo:"cliente" }),
         });
@@ -156,7 +156,7 @@ export default function Agendar() {
       }
 
       const service = services.find(s=>s.id===serviceId);
-      const agendamentoRes = await fetch(`${API}/agendamentos?dono_id=${donoId}`, {
+      const agendamentoRes = await fetch(`${API}/agendamentos?slug=${slug}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           cliente_id: cliente.id,
