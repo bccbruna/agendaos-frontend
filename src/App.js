@@ -1237,20 +1237,6 @@ useEffect(() => {
         lastVisit: "—",
       }))))
       .catch(() => console.log("API offline"));
-
-    authFetch(`${API}/agendamentos`)
-      .then(r => r.json())
-      .then(data => setApts(data.map(a => ({
-        id:        a.id,
-        clientId:  a.cliente_id,
-        profissionalId: a.profissional_id,
-        serviceId: a.serviceId || 1,
-        date:      a.data,
-        hour:      a.hora,
-        status:    a.status,
-        obs:       a.obs || "",
-      }))))
-      .catch(() => console.log("API offline"));
   }, [logado]);
 
   const [clients,  setClients]  = useState(CLIENTS_INIT);
@@ -1273,6 +1259,25 @@ useEffect(() => {
     })
     .catch(() => console.log("Serviços: usando dados locais"));
 }, [logado]);
+
+  // Agendamentos só guardam o nome do serviço (não um ID), então essa busca
+  // precisa esperar os serviços carregarem antes de resolver o serviceId.
+  useEffect(() => {
+    if (!logado) return;
+    authFetch(`${API}/agendamentos`)
+      .then(r => r.json())
+      .then(data => setApts(data.map(a => ({
+        id:        a.id,
+        clientId:  a.cliente_id,
+        profissionalId: a.profissional_id,
+        serviceId: services.find(s => s.name === a.servico)?.id || null,
+        date:      a.data,
+        hour:      a.hora,
+        status:    a.status,
+        obs:       a.obs || "",
+      }))))
+      .catch(() => console.log("API offline"));
+  }, [logado, services]);
 
   const [profissionais, setProfissionais] = useState([]);
   useEffect(() => {
@@ -1358,41 +1363,39 @@ if (conflito) {
   return;
 }
     try {
-      if (editApt) {
-        setApts(as=>as.map(a=>a.id===editApt.id?{...a,...form,clientId:parseInt(form.clientId),serviceId:parseInt(form.serviceId),profissionalId:form.profissionalId?parseInt(form.profissionalId):null,hour:parseInt(form.hour)}:a));
-      } else {
-        const service = services.find(s=>s.id===parseInt(form.serviceId));
-        const res = await authFetch(`${API}/agendamentos`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cliente_id: parseInt(form.clientId),
-            profissional_id: form.profissionalId ? parseInt(form.profissionalId) : null,
-            servico:    service?.name || "",
-            data:       form.date,
-            hora:       parseInt(form.hour),
-            status:     form.status || "confirmado",
-            obs:        form.obs || "",
-            preco:      service?.price || 0,
-          }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(()=>({}));
-          alert(err.detail || "Erro ao salvar agendamento.");
-          return;
-        }
-        const saved = await res.json();
-        setApts(as=>[...as,{
-          id:        saved.id,
-          clientId:  saved.cliente_id,
-          profissionalId: saved.profissional_id,
-          serviceId: parseInt(form.serviceId),
-          date:      saved.data,
-          hour:      saved.hora,
-          status:    saved.status,
-          obs:       saved.obs,
-        }]);
+      const service = services.find(s=>s.id===parseInt(form.serviceId));
+      const body = JSON.stringify({
+        cliente_id: parseInt(form.clientId),
+        profissional_id: form.profissionalId ? parseInt(form.profissionalId) : null,
+        servico:    service?.name || "",
+        data:       form.date,
+        hora:       parseInt(form.hour),
+        status:     form.status || "confirmado",
+        obs:        form.obs || "",
+        preco:      service?.price || 0,
+      });
+      const res = editApt
+        ? await authFetch(`${API}/agendamentos/${editApt.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body })
+        : await authFetch(`${API}/agendamentos`, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        alert(err.detail || "Erro ao salvar agendamento.");
+        return;
       }
+      const saved = await res.json();
+      const aptAtualizado = {
+        id:        saved.id,
+        clientId:  saved.cliente_id,
+        profissionalId: saved.profissional_id,
+        serviceId: parseInt(form.serviceId),
+        date:      saved.data,
+        hour:      saved.hora,
+        status:    saved.status,
+        obs:       saved.obs,
+      };
+      setApts(as => editApt
+        ? as.map(a => a.id === editApt.id ? aptAtualizado : a)
+        : [...as, aptAtualizado]);
     } catch(e) {
       alert("Erro ao salvar agendamento. API rodando?");
     }
@@ -1864,7 +1867,8 @@ localStorage.removeItem("slug");}} style={{
   const data = await res.json();
   setApts(data.map(a => ({
     id: a.id, clientId: a.cliente_id,
-    serviceId: a.serviceId || 1,
+    profissionalId: a.profissional_id,
+    serviceId: services.find(s => s.name === a.servico)?.id || null,
     date: a.data, hour: a.hora,
     status: a.status, obs: a.obs || "",
   })));
