@@ -526,19 +526,6 @@ function ClientForm({ initial, onSave, onCancel }) {
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
-      <div>
-        <div style={{ fontSize:10,color:C.muted,marginBottom:6 }}>TIPO DE ATENDIMENTO</div>
-        <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
-          {BIZ.map(b=>(
-            <button key={b.id} onClick={()=>set("biz",b.id)} style={{
-              padding:"5px 10px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-              background:form.biz===b.id?`${b.color}20`:"rgba(255,255,255,0.04)",
-              border:`1px solid ${form.biz===b.id?b.color+"55":C.border}`,
-              color:form.biz===b.id?b.color:C.muted,
-            }}>{b.icon} {b.label}</button>
-          ))}
-        </div>
-      </div>
       {[{k:"name",l:"Nome completo"},{k:"phone",l:"WhatsApp / Telefone"},{k:"email",l:"E-mail (opcional)"}].map(f=>(
         <div key={f.k}>
           <div style={{ fontSize:10,color:C.muted,marginBottom:6 }}>{f.l.toUpperCase()}</div>
@@ -1407,6 +1394,7 @@ if (conflito) {
       if (editClient) {
         setClients(cs=>cs.map(c=>c.id===editClient.id?{...c,...form}:c));
       } else {
+        const tipoAutomatico = services[0]?.biz || "barber";
         const res = await authFetch(`${API}/clientes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1414,7 +1402,7 @@ if (conflito) {
             nome:     form.name,
             telefone: form.phone,
             email:    form.email || "",
-            tipo:     form.biz   || "salon",
+            tipo:     tipoAutomatico,
           }),
         });
         if (!res.ok) {
