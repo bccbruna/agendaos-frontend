@@ -1392,7 +1392,29 @@ if (conflito) {
   async function handleSaveClient(form) {
     try {
       if (editClient) {
-        setClients(cs=>cs.map(c=>c.id===editClient.id?{...c,...form}:c));
+        const res = await authFetch(`${API}/clientes/${editClient.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome:     form.name,
+            telefone: form.phone,
+            email:    form.email || "",
+            tipo:     editClient.biz || "barber",
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({}));
+          alert(err.detail || "Erro ao salvar cliente.");
+          return;
+        }
+        const saved = await res.json();
+        setClients(cs=>cs.map(c=>c.id===editClient.id?{
+          ...c,
+          name:  saved.nome,
+          phone: saved.telefone,
+          email: saved.email,
+          biz:   saved.tipo,
+        }:c));
       } else {
         const tipoAutomatico = services[0]?.biz || "barber";
         const res = await authFetch(`${API}/clientes`, {
