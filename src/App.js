@@ -295,7 +295,7 @@ function LoginForm({ onLogin }) {
       });
       const data = await res.json();
       if (data.ok) {
-        onLogin(email, data.primeiro_acesso, data.token, data.slug);
+        onLogin(email, data.primeiro_acesso, data.token, data.slug, data.nome_negocio);
       } else {
         setErro(data.erro || "Email ou senha incorretos");
       }
@@ -333,7 +333,7 @@ function LoginForm({ onLogin }) {
       });
       const data = await res.json();
       if (data.ok) {
-        onLogin(data.email, data.primeiro_acesso, data.token, data.slug);
+        onLogin(data.email, data.primeiro_acesso, data.token, data.slug, data.nome_negocio);
       } else {
         setErro(data.erro || "Erro ao criar conta.");
       }
@@ -1203,6 +1203,10 @@ const [logado, setLogado] = useState(() => localStorage.getItem("logado") === "t
 const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
 const [usuarioEmail, setUsuarioEmail] = useState(() => localStorage.getItem("email") || "");
 const [slug, setSlug] = useState(() => localStorage.getItem("slug") || "");
+const [nomeNegocioLogado, setNomeNegocioLogado] = useState(() => localStorage.getItem("nomeNegocio") || "");
+useEffect(() => {
+  document.title = nomeNegocioLogado ? `${nomeNegocioLogado} - AgendaOS` : "AgendaOS";
+}, [nomeNegocioLogado]);
 const [linkCopiado, setLinkCopiado] = useState(false);
 const FRONTEND_URL = window.location.origin;
 const [menuOpen, setMenuOpen] = useState(false);  
@@ -1574,7 +1578,7 @@ onDelete={handleDeleteClient} />,
           </div>
 
             <LoginForm
-            onLogin={(email, primeiro, token, novoSlug) => {
+            onLogin={(email, primeiro, token, novoSlug, novoNomeNegocio) => {
               setLogado(true);
               setUsuarioEmail(email);
               setPrimeiroAcesso(primeiro);
@@ -1582,6 +1586,7 @@ onDelete={handleDeleteClient} />,
               localStorage.setItem("email", email);
               if (token) localStorage.setItem("token", token);
               if (novoSlug) { setSlug(novoSlug); localStorage.setItem("slug", novoSlug); }
+              if (novoNomeNegocio) { setNomeNegocioLogado(novoNomeNegocio); localStorage.setItem("nomeNegocio", novoNomeNegocio); }
             }}
           />
         </div>
@@ -1812,10 +1817,11 @@ onDelete={handleDeleteClient} />,
                 background:C.card,border:`1px solid ${C.border}`,borderRadius:20 }}>
                 <div style={{ width:7,height:7,borderRadius:"50%",background:C.green,animation:"pulse 2s infinite" }}/>
                 <span style={{ fontSize:10,color:C.dim }}>Sistema ativo</span>
-              <button onClick={()=>{setLogado(false);setPrimeiroAcesso(false);setUsuarioEmail("");setSlug("");
+              <button onClick={()=>{setLogado(false);setPrimeiroAcesso(false);setUsuarioEmail("");setSlug("");setNomeNegocioLogado("");
 localStorage.removeItem("logado");
 localStorage.removeItem("email");
-localStorage.removeItem("slug");}} style={{
+localStorage.removeItem("slug");
+localStorage.removeItem("nomeNegocio");}} style={{
                 marginLeft:8, background:"rgba(239,68,68,0.15)",
                 border:"1px solid rgba(239,68,68,0.3)",
                 borderRadius:8, padding:"3px 8px",
