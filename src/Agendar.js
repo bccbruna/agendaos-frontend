@@ -63,6 +63,13 @@ export default function Agendar() {
   const [negocioNaoEncontrado, setNegocioNaoEncontrado] = useState(false);
   const [negocioIndisponivel, setNegocioIndisponivel] = useState(false);
 
+  const [modo, setModo] = useState("agendar"); // "agendar" | "gerenciar"
+  const [telefoneBusca, setTelefoneBusca] = useState("");
+  const [agendamentosEncontrados, setAgendamentosEncontrados] = useState(null); // null=nao buscou ainda
+  const [buscandoAgendamentos, setBuscandoAgendamentos] = useState(false);
+  const [cancelandoId, setCancelandoId] = useState(null);
+  const [erroBusca, setErroBusca] = useState("");
+
   const [services,  setServices]  = useState([]);
   const [profissionais, setProfissionais] = useState([]);
   const [step,      setStep]      = useState(1); // 1=dados, 2=serviço, 3=profissional, 4=horário, 5=confirmado
@@ -133,6 +140,37 @@ export default function Agendar() {
       .then(horarios => setHorariosDisponiveis(horarios))
       .catch(() => setHorariosDisponiveis([]));
   }, [data, serviceId, profissionalId, donoId]);
+
+  async function buscarMeusAgendamentos() {
+    setErroBusca(""); setBuscandoAgendamentos(true); setAgendamentosEncontrados(null);
+    try {
+      const res = await fetch(`${API}/meus-agendamentos?telefone=${telefoneBusca}&slug=${slug}`);
+      const data = await res.json();
+      setAgendamentosEncontrados(Array.isArray(data) ? data : []);
+    } catch {
+      setErroBusca("Erro ao buscar agendamentos. Tente novamente.");
+    }
+    setBuscandoAgendamentos(false);
+  }
+
+  async function cancelarAgendamento(id) {
+    if (!window.confirm("Tem certeza que quer cancelar esse agendamento?")) return;
+    setCancelandoId(id);
+    try {
+      const res = await fetch(`${API}/agendamentos/${id}/cancelar-cliente?telefone=${telefoneBusca}&slug=${slug}`, {
+        method: "PUT",
+      });
+      if (res.ok) {
+        setAgendamentosEncontrados(as => as.filter(a => a.id !== id));
+      } else {
+        const err = await res.json().catch(()=>({}));
+        setErroBusca(err.detail || "Erro ao cancelar agendamento.");
+      }
+    } catch {
+      setErroBusca("Erro ao cancelar agendamento.");
+    }
+    setCancelandoId(null);
+  }
 
   async function handleAgendar() {
     setErro(""); setLoading(true);
@@ -229,6 +267,75 @@ export default function Agendar() {
     );
   }
 
+  if (modo === "gerenciar") {
+    return (
+      <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
+        fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+        <div style={{ maxWidth:480, margin:"0 auto 32px", textAlign:"center" }}>
+          <div style={{ fontWeight:900, fontSize:26, letterSpacing:"-0.02em" }}>
+            Agenda<span style={{color:C.accent}}>OS</span>
+          </div>
+          <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>
+            {nomeNegocio ? `Seus agendamentos com ${nomeNegocio}` : "Gerencie seu agendamento"}
+          </div>
+        </div>
+        <div style={{ maxWidth:480, margin:"0 auto", background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:24 }}>
+          <div style={{ fontWeight:800, fontSize:18, marginBottom:20 }}>Já tenho um agendamento</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+            <div>
+              <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>SEU WHATSAPP</div>
+              <Input value={telefoneBusca}
+                onChange={e=>setTelefoneBusca(e.target.value.replace(/\D/g,"").slice(0,11))}
+                placeholder="(11) 99999-9999" />
+            </div>
+            <Btn onClick={buscarMeusAgendamentos} disabled={telefoneBusca.length<10 || buscandoAgendamentos}>
+              {buscandoAgendamentos ? "Buscando…" : "Buscar meus agendamentos"}
+            </Btn>
+
+            {erroBusca && (
+              <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>⚠️ {erroBusca}</div>
+            )}
+
+            {agendamentosEncontrados !== null && agendamentosEncontrados.length === 0 && (
+              <div style={{ fontSize:13, color:C.dim, textAlign:"center", padding:"16px 0" }}>
+                Nenhum agendamento futuro encontrado com esse número.
+              </div>
+            )}
+
+            {agendamentosEncontrados && agendamentosEncontrados.map(ag => (
+              <div key={ag.id} style={{
+                background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`,
+                borderRadius:10, padding:"14px 16px", fontSize:13, color:C.muted,
+              }}>
+                <div style={{ color:C.text, fontWeight:700, marginBottom:4 }}>{ag.servico}</div>
+                <div>📅 {ag.data.split("-").reverse().join("/")} às {String(ag.hora).padStart(2,"0")}h</div>
+                <button onClick={()=>cancelarAgendamento(ag.id)} disabled={cancelandoId===ag.id} style={{
+                  marginTop:10, width:"100%", padding:"9px", borderRadius:10,
+                  background:"rgba(239,68,68,0.12)", border:"1px solid rgba(239,68,68,0.35)",
+                  color:C.red, fontFamily:"inherit", fontWeight:700, fontSize:12,
+                  cursor: cancelandoId===ag.id ? "not-allowed" : "pointer", opacity: cancelandoId===ag.id ? 0.6 : 1,
+                }}>
+                  {cancelandoId===ag.id ? "Cancelando…" : "Cancelar agendamento"}
+                </button>
+              </div>
+            ))}
+
+            <div style={{ fontSize:12, color:C.dim, textAlign:"center", marginTop:4 }}>
+              Quer marcar em outro horário? Cancele o atual e agende de novo.
+            </div>
+
+            <button onClick={()=>{setModo("agendar"); setAgendamentosEncontrados(null); setErroBusca("");}} style={{
+              background:"none", border:"none", color:C.accent, fontSize:12, cursor:"pointer",
+              textDecoration:"underline", fontFamily:"inherit", alignSelf:"center", marginTop:8,
+            }}>← Voltar e fazer um novo agendamento</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
       fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
@@ -295,6 +402,10 @@ export default function Agendar() {
               <Btn onClick={()=>setStep(2)} disabled={!nome||telefone.length<10||!aceitouPrivacidade}>
                 Próximo →
               </Btn>
+              <button onClick={()=>setModo("gerenciar")} style={{
+                background:"none", border:"none", color:C.accent, fontSize:12, cursor:"pointer",
+                textDecoration:"underline", fontFamily:"inherit", alignSelf:"center",
+              }}>Já tem um agendamento? Gerencie aqui</button>
             </div>
           </div>
         )}
