@@ -64,6 +64,10 @@ export default function Agendar() {
   const [negocioNaoEncontrado, setNegocioNaoEncontrado] = useState(false);
   const [negocioIndisponivel, setNegocioIndisponivel] = useState(false);
 
+  useEffect(() => {
+    document.title = nomeNegocio ? `Agendar horário - ${nomeNegocio}` : "Agendar horário - AgendaOS";
+  }, [nomeNegocio]);
+
   const [modo, setModo] = useState("agendar"); // "agendar" | "gerenciar"
   const [telefoneBusca, setTelefoneBusca] = useState("");
   const [agendamentosEncontrados, setAgendamentosEncontrados] = useState(null); // null=nao buscou ainda
