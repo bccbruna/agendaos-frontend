@@ -670,163 +670,199 @@ function Dashboard({ apts, clients, services, onNavigate, onEdit }) {
 }
 
 /* ── CALENDAR (WEEK VIEW) ────────────────────────────────────────── */
+const ROW_H = 72; // px por hora na grade semanal
+const GRID_START_H = HOURS[0];
+const GRID_END_H   = HOURS[HOURS.length - 1] + 1;
+
+function fmtHM(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60) % 24;
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function startOfWeek(d) {
+  const date = new Date(d);
+  date.setHours(0,0,0,0);
+  date.setDate(date.getDate() - date.getDay());
+  return date;
+}
+
+function dateStr(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${dd}`;
+}
+
+/* Agrupa agendamentos que se sobrepõem no tempo e distribui em colunas lado a lado */
+function layoutDayApts(dayApts, services) {
+  const items = dayApts.map(a => {
+    const service  = services.find(s => s.id === a.serviceId);
+    const duration = service?.duration || 60;
+    const start = a.hour * 60;
+    return { apt:a, service, start, end: start + duration };
+  }).sort((a,b) => a.start - b.start);
+
+  const clusters = [];
+  let current = [], clusterEnd = -Infinity;
+  items.forEach(it => {
+    if (current.length && it.start >= clusterEnd) { clusters.push(current); current = []; clusterEnd = -Infinity; }
+    current.push(it);
+    clusterEnd = Math.max(clusterEnd, it.end);
+  });
+  if (current.length) clusters.push(current);
+
+  clusters.forEach(cluster => {
+    const columnEnds = [];
+    cluster.forEach(it => {
+      let placed = false;
+      for (let c=0; c<columnEnds.length; c++) {
+        if (columnEnds[c] <= it.start) { it.col = c; columnEnds[c] = it.end; placed = true; break; }
+      }
+      if (!placed) { it.col = columnEnds.length; columnEnds.push(it.end); }
+    });
+    cluster.forEach(it => { it.numCols = columnEnds.length; });
+  });
+
+  return items;
+}
+
 function Calendar({ apts, clients, services, onEdit, onNew }) {
   const isMobile = useIsMobile();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState(null);
-  
-  const year  = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  
-  const firstDay = new Date(year, month, 1);
-  const lastDay  = new Date(year, month + 1, 0);
-  const startPad = firstDay.getDay();
-  
+  const [anchorDate, setAnchorDate] = useState(new Date());
+
+  const today = new Date();
+  const todayStr = dateStr(today);
+  const nowMinutes = today.getHours()*60 + today.getMinutes();
+
+  const daysToShow = isMobile
+    ? [anchorDate]
+    : Array.from({length:7}, (_,i) => { const d = startOfWeek(anchorDate); d.setDate(d.getDate()+i); return d; });
+
+  function nav(dir) { setAnchorDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + dir*(isMobile?1:7)); return nd; }); }
+  function goToday() { setAnchorDate(new Date()); }
+
   const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
                       "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-  
-  const today = new Date().toISOString().split("T")[0];
+  const headerLabel = isMobile
+    ? `${daysToShow[0].getDate()} de ${monthNames[daysToShow[0].getMonth()]}`
+    : `${monthNames[daysToShow[0].getMonth()]} ${daysToShow[0].getFullYear()}`;
 
-  function prevMonth() { setCurrentDate(new Date(year, month - 1, 1)); }
-  function nextMonth() { setCurrentDate(new Date(year, month + 1, 1)); }
+  const upcoming = apts
+    .filter(a => a.status !== "cancelled" && (a.date > todayStr || (a.date === todayStr && a.hour*60 + 30 >= nowMinutes)))
+    .sort((a,b) => a.date === b.date ? a.hour - b.hour : (a.date < b.date ? -1 : 1));
+  const nextApt = upcoming[0];
 
-  const days = [];
-  for (let i = 0; i < startPad; i++) days.push(null);
-  for (let i = 1; i <= lastDay.getDate(); i++) days.push(i);
+  const hourRows = Array.from({length: GRID_END_H - GRID_START_H}, (_,i) => GRID_START_H + i);
 
-  function fmtDay(day) {
-    return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  function handleGridClick(e, dStr) {
+    if (e.target !== e.currentTarget) return; // clicou num agendamento, não no vazio
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const hour = Math.min(HOURS[HOURS.length-1], GRID_START_H + Math.floor(offsetY / ROW_H));
+    onNew(dStr, hour);
   }
 
-  const selectedDate = selectedDay ? fmtDay(selectedDay) : null;
-  const selectedApts = selectedDate ? apts.filter(a => a.date === selectedDate).sort((a,b) => a.hour - b.hour) : [];
-
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      
-      {/* Navegação mês */}
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* Navegação */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <Btn variant="ghost" onClick={prevMonth}>← Anterior</Btn>
-        <div style={{ fontWeight:900, fontSize: isMobile ? 16 : 20 }}>
-          {monthNames[month]} {year}
+        <Btn variant="ghost" size="sm" onClick={()=>nav(-1)}>← {isMobile ? "Dia" : "Semana"}</Btn>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ fontWeight:900, fontSize: isMobile ? 15 : 18 }}>{headerLabel}</div>
+          <button onClick={goToday} style={{
+            fontSize:11, fontWeight:700, color:C.accent, background:`${C.accent}14`,
+            border:`1px solid ${C.accent}33`, borderRadius:20, padding:"4px 10px",
+            cursor:"pointer", fontFamily:"inherit",
+          }}>Hoje</button>
         </div>
-        <Btn variant="ghost" onClick={nextMonth}>Próximo →</Btn>
+        <Btn variant="ghost" size="sm" onClick={()=>nav(1)}>{isMobile ? "Dia" : "Semana"} →</Btn>
       </div>
 
-      {/* Cabeçalho dias da semana */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4, textAlign:"center" }}>
-        {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d => (
-          <div key={d} style={{ fontSize:10, color:C.muted, fontWeight:700, padding:"8px 0", letterSpacing:"0.1em" }}>{d}</div>
-        ))}
-      </div>
-
-      {/* Grid do mês */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap: isMobile ? 2 : 4 }}>
-        {days.map((day, i) => {
-          if (!day) return <div key={`pad-${i}`} />;
-          const dateStr  = fmtDay(day);
-          const dayApts  = apts.filter(a => a.date === dateStr);
-          const isToday  = dateStr === today;
-          const isSel    = day === selectedDay;
-          const isPast   = dateStr < today;
-
+      {/* Cabeçalho dos dias */}
+      <div style={{ display:"flex", paddingLeft:44 }}>
+        {daysToShow.map(d => {
+          const dStr = dateStr(d);
+          const isToday = dStr === todayStr;
           return (
-            <div key={day} onClick={() => setSelectedDay(day)} style={{
-              minHeight: isMobile ? 50 : 80,
-              borderRadius:10, padding: isMobile ? "4px" : "8px 6px",
-              background: isSel ? `${C.accent}18` : isToday ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
-              border: `1px solid ${isSel ? C.accent+"55" : isToday ? C.accent+"33" : C.border}`,
-              cursor:"pointer", transition:"all 0.15s",
-              opacity: isPast ? 0.5 : 1,
-            }}>
+            <div key={dStr} style={{ flex:1, textAlign:"center", padding:"6px 4px" }}>
+              <div style={{ fontSize:10, color: isToday ? C.accent : C.muted, fontWeight:700, letterSpacing:"0.08em" }}>
+                {DAYS_SHORT[d.getDay()]}
+              </div>
               <div style={{
-                fontSize: isMobile ? 11 : 13,
-                fontWeight: isToday||isSel ? 900 : 600,
-                color: isSel ? C.accent : isToday ? C.accent : C.text,
-                marginBottom:2,
-              }}>{day}</div>
-              
-              {!isMobile && dayApts.slice(0,2).map(a => {
-                const service = services.find(s => s.id === a.serviceId);
-                const client  = clients.find(c => c.id === a.clientId);
-                return (
-                  <div key={a.id} style={{
-                    fontSize:9, fontWeight:700, padding:"2px 5px", borderRadius:4, marginBottom:2,
-                    background: `${service?.color || C.accent}22`,
-                    color: service?.color || C.accent,
-                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-                  }}>
-                    {String(a.hour).padStart(2,"0")}h {client?.name?.split(" ")[0] || "—"}
-                  </div>
-                );
-              })}
-              {dayApts.length > 0 && isMobile && (
-                <div style={{
-                  width:6, height:6, borderRadius:"50%",
-                  background: C.accent, margin:"2px auto 0",
-                }}/>
-              )}
-              {dayApts.length > 2 && !isMobile && (
-                <div style={{ fontSize:9, color:C.dim }}>+{dayApts.length - 2} mais</div>
-              )}
+                fontSize:15, fontWeight:900, marginTop:2,
+                color: isToday ? C.accent : C.text,
+              }}>{d.getDate()}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Painel do dia selecionado */}
-      {selectedDay && (
-        <Card>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-            <div style={{ fontWeight:900, fontSize:16 }}>
-              {selectedDay}/{String(month+1).padStart(2,"0")}/{year}
-              <span style={{ fontSize:12, color:C.dim, marginLeft:8, fontWeight:400 }}>
-                {selectedApts.length} agendamento{selectedApts.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <Btn variant="primary" size="sm" onClick={() => onNew(fmtDay(selectedDay))}>
-              + Novo
-            </Btn>
-          </div>
+      {/* Grade de horários */}
+      <div style={{ display:"flex", border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
+        {/* Coluna de horas */}
+        <div style={{ width:44, flexShrink:0, background:C.surface }}>
+          {hourRows.map(h => (
+            <div key={h} style={{
+              height:ROW_H, display:"flex", alignItems:"flex-start", justifyContent:"flex-end",
+              paddingRight:6, paddingTop:2, fontSize:10, color:C.dim, borderTop:`1px solid ${C.border}`,
+            }}>{h}h</div>
+          ))}
+        </div>
 
-          {selectedApts.length === 0 ? (
-            <div style={{ fontSize:13, color:C.dim, textAlign:"center", padding:"24px 0" }}>
-              Nenhum agendamento neste dia.
-            </div>
-          ) : (
-            selectedApts.map(a => {
-              const client  = clients.find(c => c.id === a.clientId);
-              const service = services.find(s => s.id === a.serviceId);
-              return (
-                <div key={a.id} onClick={() => onEdit(a)} style={{
-                  display:"flex", alignItems:"center", gap:12,
-                  padding:"12px 14px", borderRadius:10, marginBottom:8, cursor:"pointer",
-                  background: `${service?.color || C.accent}0D`,
-                  border: `1px solid ${service?.color || C.accent}22`,
-                  transition:"all 0.15s",
-                }}>
-                  <div style={{
-                    width:44, height:44, borderRadius:10, flexShrink:0,
-                    background: `${service?.color || C.accent}18`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    fontWeight:900, fontSize:14, color: service?.color || C.accent,
+        {/* Colunas dos dias */}
+        {daysToShow.map(d => {
+          const dStr = dateStr(d);
+          const dayApts = layoutDayApts(apts.filter(a => a.date === dStr), services);
+          return (
+            <div key={dStr}
+              onClick={(e)=>handleGridClick(e, dStr)}
+              style={{
+                flex:1, position:"relative", cursor:"pointer",
+                borderLeft:`1px solid ${C.border}`,
+                background: dStr === todayStr ? `${C.accent}06` : "transparent",
+              }}>
+              {hourRows.map(h => (
+                <div key={h} style={{ height:ROW_H, borderTop:`1px solid ${C.border}` }} />
+              ))}
+
+              {dayApts.map(it => {
+                const isNext = nextApt && it.apt.id === nextApt.id;
+                const isCancelled = it.apt.status === "cancelled";
+                const client = clients.find(c => c.id === it.apt.clientId);
+                const top = (it.start/60 - GRID_START_H) * ROW_H;
+                const height = Math.max((it.end - it.start)/60 * ROW_H - 3, 22);
+                const widthPct = 100 / it.numCols;
+                return (
+                  <div key={it.apt.id} onClick={(e)=>{e.stopPropagation();onEdit(it.apt);}} style={{
+                    position:"absolute", top, height,
+                    left:`calc(${it.col*widthPct}% + 2px)`, width:`calc(${widthPct}% - 4px)`,
+                    borderRadius:8, padding:"4px 7px", cursor:"pointer", overflow:"hidden",
+                    opacity: isCancelled ? 0.45 : 1,
+                    background: isNext ? `linear-gradient(135deg,${C.accent},${C.accent2})`
+                      : isCancelled ? `${C.red}14` : `${it.service?.color || C.accent}14`,
+                    border: isNext ? "none" : `1px solid ${isCancelled ? C.red+"44" : (it.service?.color||C.accent)+"33"}`,
+                    color: isNext ? "#111111" : C.text,
                   }}>
-                    {String(a.hour).padStart(2,"0")}h
+                    <div style={{ fontSize:11, fontWeight:800, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {client?.name || "—"}
+                    </div>
+                    {height >= 26 && (
+                      <div style={{ fontSize:10, opacity:0.8, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {it.service?.name || "—"}
+                      </div>
+                    )}
+                    {height >= 44 && (
+                      <div style={{ fontSize:9, opacity:0.65, marginTop:1 }}>
+                        {fmtHM(it.start)}–{fmtHM(it.end)}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{client?.name || "—"}</div>
-                    <div style={{ fontSize:12, color:C.dim }}>{service?.name} · {service?.duration}min</div>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontWeight:800, color:C.green, fontSize:13 }}>{fmtBRL(service?.price || 0)}</div>
-                    <Badge status={a.status} />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </Card>
-      )}
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
