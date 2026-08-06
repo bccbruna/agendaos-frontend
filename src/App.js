@@ -1539,9 +1539,15 @@ async function handleCancelApt() {
     setCancelMsg("");
   }
 
-  function handleConfirmApt(apt) {
+  async function handleConfirmApt(apt) {
     const client  = clients.find(c => c.id === apt.clientId);
     const service = services.find(s => s.id === apt.serviceId);
+
+    try {
+      await authFetch(`${API}/agendamentos/${apt.id}/status?status=confirmed`, {
+        method: "PUT",
+      });
+    } catch(e) {}
 
     setApts(as => as.map(a => a.id === apt.id ? {...a, status:"confirmed"} : a));
 
@@ -1554,6 +1560,9 @@ async function handleCancelApt() {
     const msg     = encodeURIComponent(texto);
 
     window.open("https://wa.me/55" + phone + "?text=" + msg, "_blank");
+
+    setAptModal(false);
+    setEditApt(null);
   }
   // eslint-disable-next-line
   async function handleDeleteApt(id) {
