@@ -42,8 +42,8 @@ function Btn({ children, onClick, disabled }) {
 function TelaMensagem({ emoji, titulo, texto }) {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text, display:"flex",
-      alignItems:"center", justifyContent:"center", fontFamily:"'DM Sans',sans-serif", padding:24 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+      alignItems:"center", justifyContent:"center", fontFamily:"'Satoshi',sans-serif", padding:24 }}>
+      <style>{`@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:32, maxWidth:400, textAlign:"center" }}>
         <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
         <div style={{ fontWeight:800, fontSize:17, marginBottom:8 }}>{titulo}</div>
@@ -276,8 +276,8 @@ export default function Agendar() {
   if (modo === "gerenciar") {
     return (
       <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
-        fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+        fontFamily:"'Satoshi',sans-serif", padding:"24px 16px" }}>
+        <style>{`@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
         <div style={{ maxWidth:480, margin:"0 auto 32px", textAlign:"center" }}>
           <img src="/logo.png" alt="AgendaOS" style={{ width:48, height:48, borderRadius:12, margin:"0 auto 12px", display:"block" }} />
           <div style={{ fontWeight:900, fontSize:26, letterSpacing:"-0.02em" }}>
@@ -345,8 +345,8 @@ export default function Agendar() {
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text,
-      fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+      fontFamily:"'Satoshi',sans-serif", padding:"24px 16px" }}>
+      <style>{`@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
 
       {/* Header */}
       <div style={{ maxWidth:480, margin:"0 auto 32px", textAlign:"center" }}>

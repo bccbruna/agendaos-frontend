@@ -1567,7 +1567,7 @@ onDelete={handleDeleteClient} />,
       <div style={{
         minHeight:"100vh", background:C.bg, display:"flex",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'DM Sans',sans-serif",
+        fontFamily:"'Satoshi',sans-serif",
       }}>
         <div style={{
           background:C.surface, border:`1px solid ${C.border}`,
@@ -1606,7 +1606,7 @@ onDelete={handleDeleteClient} />,
       <div style={{
         minHeight:"100vh", background:C.bg, display:"flex",
         alignItems:"center", justifyContent:"center",
-        fontFamily:"'DM Sans',sans-serif",
+        fontFamily:"'Satoshi',sans-serif",
       }}>
         <div style={{
           background:C.surface, border:`1px solid ${C.border}`,
@@ -1631,9 +1631,9 @@ onDelete={handleDeleteClient} />,
     );
   }
   return (
-          <div style={{ minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'DM Sans',sans-serif" }}>
+          <div style={{ minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Satoshi',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
+        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-thumb{background:rgba(212,175,55,0.3);border-radius:4px}
