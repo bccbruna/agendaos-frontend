@@ -4,15 +4,15 @@ import { useSearchParams } from "react-router-dom";
 const API = "https://agendaos-backend-production.up.railway.app";
 
 const C = {
-  bg:      "#08090F",
-  surface: "#0E1018",
-  card:    "#131620",
-  border:  "rgba(255,255,255,0.07)",
-  accent:  "#A855F7",
-  accent2: "#7C3AED",
+  bg:      "#121212",
+  surface: "#1B1B1B",
+  card:    "#202020",
+  border:  "rgba(255,255,255,0.06)",
+  accent:  "#D8B15A",
+  accent2: "#E5C87A",
   red:     "#EF4444",
-  text:    "#F0F0F8",
-  muted:   "rgba(240,240,248,0.44)",
+  text:    "#FFFFFF",
+  muted:   "#B6B6B6",
 };
 
 function Input({ value, onChange, placeholder, type="text" }) {
@@ -115,7 +115,7 @@ export default function RedefinirSenha() {
             )}
             <button onClick={handleRedefinir} disabled={loading} style={{
               background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-              border:"none", borderRadius:10, color:"#fff",
+              border:"none", borderRadius:10, color:"#111111",
               fontSize:13, fontWeight:700, padding:"12px 24px",
               cursor:loading?"not-allowed":"pointer", opacity:loading?0.5:1,
               fontFamily:"inherit", width:"100%",

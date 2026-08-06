@@ -4,18 +4,18 @@ import { useParams } from "react-router-dom";
 const API = "https://agendaos-backend-production.up.railway.app";
 
 const C = {
-  bg:      "#08090F",
-  surface: "#0E1018",
-  card:    "#131620",
-  border:  "rgba(255,255,255,0.07)",
-  accent:  "#A855F7",
-  accent2: "#7C3AED",
-  green:   "#10B981",
+  bg:      "#121212",
+  surface: "#1B1B1B",
+  card:    "#202020",
+  border:  "rgba(255,255,255,0.06)",
+  accent:  "#D8B15A",
+  accent2: "#E5C87A",
+  green:   "#57C785",
   yellow:  "#F59E0B",
   red:     "#EF4444",
-  text:    "#F0F0F8",
-  muted:   "rgba(240,240,248,0.44)",
-  dim:     "rgba(240,240,248,0.18)",
+  text:    "#FFFFFF",
+  muted:   "#B6B6B6",
+  dim:     "#7A7A7A",
 };
 
 function Input({ value, onChange, placeholder, type="text" }) {
@@ -31,7 +31,7 @@ function Btn({ children, onClick, disabled }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
       background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-      border:"none", borderRadius:10, color:"#fff",
+      border:"none", borderRadius:10, color:"#111111",
       fontSize:13, fontWeight:700, padding:"12px 24px",
       cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.5:1,
       fontFamily:"inherit", width:"100%", marginTop:8,
@@ -279,6 +279,7 @@ export default function Agendar() {
         fontFamily:"'DM Sans',sans-serif", padding:"24px 16px" }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
         <div style={{ maxWidth:480, margin:"0 auto 32px", textAlign:"center" }}>
+          <img src="/logo.png" alt="AgendaOS" style={{ width:48, height:48, borderRadius:12, margin:"0 auto 12px", display:"block" }} />
           <div style={{ fontWeight:900, fontSize:26, letterSpacing:"-0.02em" }}>
             Agenda<span style={{color:C.accent}}>OS</span>
           </div>
@@ -349,6 +350,7 @@ export default function Agendar() {
 
       {/* Header */}
       <div style={{ maxWidth:480, margin:"0 auto 32px", textAlign:"center" }}>
+        <img src="/logo.png" alt="AgendaOS" style={{ width:48, height:48, borderRadius:12, margin:"0 auto 12px", display:"block" }} />
         <div style={{ fontWeight:900, fontSize:26, letterSpacing:"-0.02em" }}>
           Agenda<span style={{color:C.accent}}>OS</span>
         </div>
@@ -464,7 +466,7 @@ export default function Agendar() {
               <button onClick={()=>setStep(hasProfissionais ? 3 : 4)} disabled={!serviceId} style={{
                 flex:2, padding:"10px", borderRadius:10, cursor:serviceId?"pointer":"not-allowed",
                 background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-                border:"none", color:"#fff", fontFamily:"inherit", fontWeight:700, fontSize:13,
+                border:"none", color:"#111111", fontFamily:"inherit", fontWeight:700, fontSize:13,
                 opacity:serviceId?1:0.5,
               }}>Próximo →</button>
             </div>
@@ -506,7 +508,7 @@ export default function Agendar() {
               <button onClick={()=>setStep(4)} disabled={profissionalId===undefined} style={{
                 flex:2, padding:"10px", borderRadius:10, cursor:profissionalId!==undefined?"pointer":"not-allowed",
                 background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-                border:"none", color:"#fff", fontFamily:"inherit", fontWeight:700, fontSize:13,
+                border:"none", color:"#111111", fontFamily:"inherit", fontWeight:700, fontSize:13,
                 opacity:profissionalId!==undefined?1:0.5,
               }}>Próximo →</button>
             </div>
@@ -584,7 +586,7 @@ export default function Agendar() {
                   flex:2, padding:"10px", borderRadius:10,
                   cursor:(!data||loading)?"not-allowed":"pointer",
                   background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-                  border:"none", color:"#fff", fontFamily:"inherit", fontWeight:700, fontSize:13,
+                  border:"none", color:"#111111", fontFamily:"inherit", fontWeight:700, fontSize:13,
                   opacity:(!data||loading)?0.5:1,
                 }}>{loading?"Agendando…":"✅ Confirmar agendamento"}</button>
               </div>

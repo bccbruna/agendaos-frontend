@@ -17,20 +17,20 @@ const authFetch = (url, options = {}) => {
 };
 /* ── TOKENS ──────────────────────────────────────────────────────── */
 const C = {
-  bg:      "#08090F",
-  surface: "#0E1018",
-  card:    "#131620",
-  border:  "rgba(255,255,255,0.07)",
-  accent:  "#A855F7",
-  accent2: "#7C3AED",
-  green:   "#10B981",
+  bg:      "#121212",
+  surface: "#1B1B1B",
+  card:    "#202020",
+  border:  "rgba(255,255,255,0.06)",
+  accent:  "#D8B15A",
+  accent2: "#E5C87A",
+  green:   "#57C785",
   yellow:  "#F59E0B",
   red:     "#EF4444",
   blue:    "#3B82F6",
   pink:    "#EC4899",
-  text:    "#F0F0F8",
-  muted:   "rgba(240,240,248,0.44)",
-  dim:     "rgba(240,240,248,0.18)",
+  text:    "#FFFFFF",
+  muted:   "#B6B6B6",
+  dim:     "#7A7A7A",
 };
 
 /* ── BUSINESS TYPES ─────────────────────────────────────────────── */
@@ -122,11 +122,11 @@ function Btn({ children, onClick, variant="primary", size="md", disabled, style 
     primary: `linear-gradient(135deg,${C.accent},${C.accent2})`,
     ghost:   "rgba(255,255,255,0.06)",
     danger:  "rgba(239,68,68,0.14)",
-    success: "rgba(16,185,129,0.14)",
+    success: "rgba(87,199,133,0.14)",
     outline: "transparent",
   };
-  const colors = { primary:"#fff", ghost:C.muted, danger:C.red, success:C.green, outline:C.accent };
-  const borders = { primary:"none", ghost:`1px solid ${C.border}`, danger:`1px solid rgba(239,68,68,0.3)`, success:`1px solid rgba(16,185,129,0.3)`, outline:`1px solid ${C.accent}55` };
+  const colors = { primary:"#121212", ghost:C.muted, danger:C.red, success:C.green, outline:C.accent };
+  const borders = { primary:"none", ghost:`1px solid ${C.border}`, danger:`1px solid rgba(239,68,68,0.3)`, success:`1px solid rgba(87,199,133,0.3)`, outline:`1px solid ${C.accent}55` };
   const pads = { sm:"6px 12px", md:"9px 18px", lg:"13px 26px" };
   return (
     <button onClick={onClick} disabled={disabled} style={{
@@ -1088,7 +1088,7 @@ function Configuracoes() {
             borderRadius:10, padding:"10px 14px", fontSize:12, color:C.red }}>⚠️ {erro}</div>
         )}
         {sucesso && (
-          <div style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.3)",
+          <div style={{ background:"rgba(87,199,133,0.1)", border:"1px solid rgba(87,199,133,0.3)",
             borderRadius:10, padding:"10px 14px", fontSize:12, color:C.green }}>✅ Salvo com sucesso!</div>
         )}
         <Btn variant="primary" onClick={salvar} disabled={salvando || diasFuncionamento.length===0}>
@@ -1162,15 +1162,15 @@ function Assinatura() {
       <div style={{ fontWeight:800, fontSize:16, marginBottom:20 }}>Sua Assinatura</div>
       <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
         {dados?.status === "ativa" && (
-          <div style={{ background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.3)",
+          <div style={{ background:"rgba(87,199,133,0.1)", border:"1px solid rgba(87,199,133,0.3)",
             borderRadius:10, padding:"14px 16px", fontSize:13, color:C.text }}>
             ✅ Assinatura ativa — {precoFmt}/mês
           </div>
         )}
         {dados?.status === "trial" && dados.ativa && (
           <div style={{
-            background: dados.dias_restantes <= 3 ? "rgba(245,158,11,0.1)" : "rgba(168,85,247,0.08)",
-            border: `1px solid ${dados.dias_restantes <= 3 ? "rgba(245,158,11,0.3)" : "rgba(168,85,247,0.2)"}`,
+            background: dados.dias_restantes <= 3 ? "rgba(245,158,11,0.1)" : "rgba(212,175,55,0.08)",
+            border: `1px solid ${dados.dias_restantes <= 3 ? "rgba(245,158,11,0.3)" : "rgba(212,175,55,0.2)"}`,
             borderRadius:10, padding:"14px 16px", fontSize:13, color:C.text }}>
             ⏳ Teste grátis: {dados.dias_restantes} dia(s) restante(s)
           </div>
@@ -1574,12 +1574,8 @@ onDelete={handleDeleteClient} />,
           borderRadius:20, padding:40, width:"100%", maxWidth:400,
         }}>
           <div style={{ textAlign:"center", marginBottom:32 }}>
-            <div style={{
-              width:56, height:56, borderRadius:14, margin:"0 auto 16px",
-              background:`linear-gradient(135deg,${C.accent},${C.accent2})`,
-              display:"flex", alignItems:"center", justifyContent:"center", fontSize:26,
-            }}>📅</div>
-            <div style={{ fontWeight:900, fontSize:22, letterSpacing:"-0.02em" }}>
+            <img src="/logo.png" alt="AgendaOS" style={{ width:56, height:56, borderRadius:14, margin:"0 auto 16px", display:"block" }} />
+            <div style={{ fontWeight:900, fontSize:28, letterSpacing:"-0.02em" }}>
               Agenda<span style={{color:C.accent}}>OS</span>
             </div>
             <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>
@@ -1640,19 +1636,19 @@ onDelete={handleDeleteClient} />,
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.3);border-radius:4px}
-        select option{background:#0E1018;color:#F0F0F8}
+        ::-webkit-scrollbar-thumb{background:rgba(212,175,55,0.3);border-radius:4px}
+        select option{background:#1B1B1B;color:#FFFFFF}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
       `}</style>
 
       {/* BG */}
       <div style={{ position:"fixed",inset:0,pointerEvents:"none",
-        backgroundImage:"linear-gradient(rgba(168,85,247,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.02) 1px,transparent 1px)",
+        backgroundImage:"linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)",
         backgroundSize:"40px 40px",zIndex:0 }}/>
       <div style={{ position:"fixed",top:"-15%",left:"-10%",width:500,height:500,borderRadius:"50%",
-        background:"radial-gradient(circle,rgba(168,85,247,0.07),transparent 70%)",pointerEvents:"none",zIndex:0 }}/>
+        background:"radial-gradient(circle,rgba(212,175,55,0.05),transparent 70%)",pointerEvents:"none",zIndex:0 }}/>
       <div style={{ position:"fixed",bottom:"-15%",right:"-10%",width:400,height:400,borderRadius:"50%",
-        background:"radial-gradient(circle,rgba(236,72,153,0.06),transparent 70%)",pointerEvents:"none",zIndex:0 }}/>
+        background:"radial-gradient(circle,rgba(212,175,55,0.04),transparent 70%)",pointerEvents:"none",zIndex:0 }}/>
 
       <div style={{ position:"relative",zIndex:1,display:"flex",minHeight:"100vh",flexDirection: isMobile ? "column" : "row" }}>
 
@@ -1664,12 +1660,8 @@ onDelete={handleDeleteClient} />,
     padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between",
   }}>
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-      <div style={{
-        width:32, height:32, borderRadius:8,
-        background:`linear-gradient(135deg,${C.accent},${C.pink})`,
-        display:"flex", alignItems:"center", justifyContent:"center", fontSize:16,
-      }}>📅</div>
-      <div style={{ fontWeight:900, fontSize:15 }}>Agenda<span style={{color:C.accent}}>OS</span></div>
+      <img src="/logo.png" alt="AgendaOS" style={{ width:32, height:32, borderRadius:8, display:"block" }} />
+      <div style={{ fontWeight:900, fontSize:17, letterSpacing:"-0.02em" }}>Agenda<span style={{color:C.accent}}>OS</span></div>
     </div>
     <button onClick={()=>setMenuOpen(o=>!o)} style={{
       background:"none", border:`1px solid ${C.border}`, borderRadius:8,
@@ -1729,13 +1721,9 @@ onDelete={handleDeleteClient} />,
 
   <div style={{ padding:"0 20px 24px",borderBottom:`1px solid ${C.border}`,marginBottom:20 }}>
     <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-      <div style={{
-        width:36,height:36,borderRadius:10,
-        background:`linear-gradient(135deg,${C.accent},${C.pink})`,
-        display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
-      }}>📅</div>
+      <img src="/logo.png" alt="AgendaOS" style={{ width:36, height:36, borderRadius:10, display:"block" }} />
       <div>
-        <div style={{ fontWeight:900,fontSize:16,letterSpacing:"-0.02em" }}>Agenda<span style={{color:C.accent}}>OS</span></div>
+        <div style={{ fontWeight:900,fontSize:18,letterSpacing:"-0.02em" }}>Agenda<span style={{color:C.accent}}>OS</span></div>
         <div style={{ fontSize:9,color:C.dim,letterSpacing:"0.14em" }}>AGENDAMENTOS</div>
       </div>
     </div>

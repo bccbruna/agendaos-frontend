@@ -1,11 +1,11 @@
 const C = {
-  bg:      "#08090F",
-  card:    "#131620",
-  border:  "rgba(255,255,255,0.07)",
-  accent:  "#A855F7",
-  text:    "#F0F0F8",
-  muted:   "rgba(240,240,248,0.7)",
-  dim:     "rgba(240,240,248,0.44)",
+  bg:      "#121212",
+  card:    "#202020",
+  border:  "rgba(255,255,255,0.06)",
+  accent:  "#D8B15A",
+  text:    "#FFFFFF",
+  muted:   "#B6B6B6",
+  dim:     "#7A7A7A",
 };
 
 const secao = { marginBottom: 24 };
