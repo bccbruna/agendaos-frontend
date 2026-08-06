@@ -998,6 +998,7 @@ function Configuracoes() {
   const [horarioAbertura, setHorarioAbertura] = useState("08:00");
   const [horarioFechamento, setHorarioFechamento] = useState("18:00");
   const [diasFuncionamento, setDiasFuncionamento] = useState(["1","2","3","4","5","6"]);
+  const [instagram, setInstagram] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -1010,6 +1011,7 @@ function Configuracoes() {
         setHorarioAbertura(data.horario_abertura);
         setHorarioFechamento(data.horario_fechamento);
         setDiasFuncionamento(data.dias_funcionamento.split(","));
+        setInstagram(data.instagram || "");
       })
       .catch(() => {})
       .finally(() => setCarregando(false));
@@ -1029,6 +1031,7 @@ function Configuracoes() {
           horario_abertura: horarioAbertura,
           horario_fechamento: horarioFechamento,
           dias_funcionamento: diasFuncionamento.join(","),
+          instagram,
         }),
       });
       const data = await res.json();
@@ -1071,6 +1074,13 @@ function Configuracoes() {
                 }}>{d.label}</button>
               );
             })}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:6 }}>INSTAGRAM DA BARBEARIA (opcional)</div>
+          <Input placeholder="@seuusuario" value={instagram} onChange={e=>setInstagram(e.target.value)} />
+          <div style={{ fontSize:11, color:C.dim, marginTop:6 }}>
+            Aparece como um botão na página de agendamento, levando pro seu perfil.
           </div>
         </div>
         {erro && (

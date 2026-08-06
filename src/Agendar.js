@@ -57,6 +57,7 @@ export default function Agendar() {
   const { slug } = useParams();
   const [donoId, setDonoId] = useState(null);
   const [nomeNegocio, setNomeNegocio] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [horarioAbertura, setHorarioAbertura] = useState("08:00");
   const [horarioFechamento, setHorarioFechamento] = useState("18:00");
   const [carregandoNegocio, setCarregandoNegocio] = useState(true);
@@ -99,6 +100,7 @@ export default function Agendar() {
       .then(neg => {
         setDonoId(neg.id);
         setNomeNegocio(neg.nome_negocio);
+        setInstagram(neg.instagram || "");
         if (neg.horario_abertura) setHorarioAbertura(neg.horario_abertura);
         if (neg.horario_fechamento) setHorarioFechamento(neg.horario_fechamento);
         if (neg.aceita_agendamentos === false) setNegocioIndisponivel(true);
@@ -349,6 +351,22 @@ export default function Agendar() {
         <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>
           {nomeNegocio ? `Agende seu horário com ${nomeNegocio}` : "Agende seu horário de forma rápida e fácil"}
         </div>
+        {instagram && (
+          <a href={`https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer"
+            style={{
+              display:"inline-flex", alignItems:"center", gap:6, marginTop:10,
+              padding:"6px 14px", borderRadius:20, textDecoration:"none",
+              background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
+              color:C.text, fontSize:12, fontWeight:700,
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+            @{instagram}
+          </a>
+        )}
       </div>
 
       <div style={{ maxWidth:480, margin:"0 auto" }}>
