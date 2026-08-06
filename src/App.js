@@ -1092,7 +1092,7 @@ function Configuracoes() {
             borderRadius:10, padding:"10px 14px", fontSize:12, color:C.green }}>✅ Salvo com sucesso!</div>
         )}
         <Btn variant="primary" onClick={salvar} disabled={salvando || diasFuncionamento.length===0}>
-          {salvando ? "Salvando…" : "Salvar horário"}
+          {salvando ? "Salvando…" : "Salvar alterações"}
         </Btn>
       </div>
     </Card>
